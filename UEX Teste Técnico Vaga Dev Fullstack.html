@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UEX Startup Studio — Desenvolvedor Fullstack</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue-50: #E6F1FB; --blue-100: #B5D4F4; --blue-400: #378ADD; --blue-600: #185FA5; --blue-800: #0C447C; --blue-900: #042C53;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-400: #7F77DD; --purple-600: #534AB7; --purple-800: #3C3489;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --gray-50: #F1EFE8; --gray-100: #D3D1C7; --gray-400: #888780; --gray-600: #5F5E5A; --gray-800: #444441;
+    --amber-50: #FAEEDA; --amber-800: #633806;
+    --green-50: #EAF3DE; --green-400: #639922; --green-800: #27500A;
+    --red-50: #FCEBEB; --red-800: #791F1F;
+    --bg: #FAFAF8;
+    --surface: #FFFFFF;
+    --border: rgba(0,0,0,0.1);
+    --border-md: rgba(0,0,0,0.18);
+    --text-primary: #1A1A18;
+    --text-secondary: #5F5E5A;
+    --text-tertiary: #888780;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    line-height: 1.7;
+    font-size: 15px;
+    padding: 0;
+  }
+
+  .page {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 48px 40px 80px;
+  }
+
+  .chapter-break {
+    page-break-before: always;
+    padding-top: 48px;
+  }
+
+  .doc-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 32px;
+    margin-bottom: 40px;
+  }
+  .doc-logo {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 24px;
+  }
+  .doc-logo-dot {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--blue-400);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 14px; font-weight: 600;
+  }
+  .doc-logo-name { font-size: 15px; font-weight: 500; color: var(--text-secondary); }
+  .doc-title { font-size: 28px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; line-height: 1.3; }
+  .doc-subtitle { font-size: 15px; color: var(--text-secondary); }
+  .doc-meta { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 16px; }
+  .doc-meta-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-tertiary); }
+  .doc-meta-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--gray-100); }
+
+  .sec-label {
+    font-size: 11px; font-weight: 600; color: var(--text-tertiary);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin: 32px 0 12px;
+  }
+
+  .profile-header {
+    background: var(--gray-50);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 12px;
+  }
+  .profile-tag {
+    display: inline-block; font-size: 11px; font-weight: 500;
+    padding: 3px 10px; border-radius: 20px; margin-bottom: 10px;
+  }
+  .tag-blue { background: var(--blue-50); color: var(--blue-800); }
+  .tag-green { background: var(--green-50); color: var(--green-800); }
+  .tag-purple { background: var(--purple-50); color: var(--purple-800); }
+  .tag-teal { background: var(--teal-50); color: var(--teal-800); }
+  .tag-gray { background: var(--gray-50); color: var(--gray-800); }
+  .tag-amber { background: var(--amber-50); color: var(--amber-800); }
+
+  .profile-title { font-size: 22px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+  .profile-org { font-size: 15px; color: var(--text-secondary); margin-bottom: 14px; }
+  .meta-row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .meta-item { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--text-secondary); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+  .card p { font-size: 15px; line-height: 1.75; color: var(--text-primary); }
+
+  .notice {
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    display: flex; gap: 12px;
+    margin-bottom: 12px;
+    font-size: 13px; line-height: 1.6;
+  }
+  .notice-warn { background: #FAEEDA; border: 1px solid #EF9F27; color: #633806; }
+  .notice-info { background: var(--blue-50); border: 1px solid var(--blue-100); color: var(--blue-800); }
+  .notice-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+  .resp-list { list-style: none; }
+  .resp-item {
+    display: flex; gap: 14px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+  .resp-item:last-child { border-bottom: none; }
+  .resp-icon { font-size: 17px; color: var(--text-tertiary); flex-shrink: 0; margin-top: 1px; }
+  .resp-text { font-size: 15px; color: var(--text-primary); line-height: 1.6; }
+  .resp-text small { font-size: 12px; color: var(--text-secondary); display: block; margin-top: 2px; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+
+  .req-list { list-style: none; }
+  .req-item {
+    display: flex; gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px; color: var(--text-primary); line-height: 1.6;
+    align-items: flex-start;
+  }
+  .req-item:last-child { border-bottom: none; }
+  .req-icon { font-size: 15px; color: var(--text-tertiary); flex-shrink: 0; margin-top: 2px; }
+  .req-item small { font-size: 12px; color: var(--text-tertiary); display: block; margin-top: 2px; }
+
+  .badge-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 12px; font-weight: 500;
+    padding: 4px 10px; border-radius: 20px;
+  }
+
+  .ai-block {
+    border-left: 2px solid var(--purple-600);
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    background: var(--purple-50);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  }
+  .ai-block p { font-size: 14px; color: var(--purple-800); margin: 0; line-height: 1.6; }
+  .ai-block small { font-size: 12px; color: var(--purple-600); display: block; margin-top: 3px; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+  .spec-row {
+    display: flex; gap: 12px; padding: 10px 0;
+    border-bottom: 1px solid var(--border); align-items: flex-start;
+  }
+  .spec-row:last-child { border-bottom: none; }
+  .spec-row div { font-size: 15px; color: var(--text-primary); line-height: 1.6; }
+  .spec-row small { font-size: 12px; color: var(--text-secondary); display: block; margin-top: 2px; }
+
+  .mock-frame {
+    background: var(--gray-50);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .mock-topbar {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 8px 12px;
+    display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+  }
+  .mock-app-name { font-size: 13px; font-weight: 500; }
+  .mock-project { font-size: 12px; color: var(--text-tertiary); }
+  .mock-toggle { display: flex; gap: 4px; margin-left: auto; }
+  .mock-view-btn {
+    display: flex; align-items: center; gap: 4px; font-size: 11px;
+    padding: 4px 10px; border-radius: 6px;
+    border: 1px solid var(--border); background: transparent; color: var(--text-secondary);
+  }
+  .mock-view-btn.active { background: var(--blue-50); color: var(--blue-800); border-color: var(--blue-100); }
+  .mock-body { display: grid; grid-template-columns: 140px 1fr; gap: 10px; }
+  .mock-nav {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 10px;
+  }
+  .mock-nav-label { font-size: 10px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+  .mock-nav-item {
+    font-size: 12px; color: var(--text-secondary);
+    padding: 5px 8px; border-radius: 6px;
+    display: flex; align-items: center; gap: 5px; margin-bottom: 2px;
+  }
+  .mock-nav-item.active { background: var(--blue-50); color: var(--blue-800); }
+  .mock-nav-item.new { color: var(--blue-600); margin-top: 6px; }
+  .mock-tasks { display: flex; flex-direction: column; gap: 7px; }
+  .mock-task {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 9px 12px;
+    display: flex; align-items: center; gap: 9px;
+  }
+  .mock-grip { font-size: 13px; color: var(--gray-100); }
+  .mock-task-info { flex: 1; min-width: 0; }
+  .mock-task-title { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mock-task-desc { font-size: 11px; color: var(--text-tertiary); margin-top: 1px; }
+  .mock-tag { font-size: 10px; padding: 2px 6px; border-radius: 8px; background: var(--purple-50); color: var(--purple-800); flex-shrink: 0; }
+  .mock-status { font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 10px; flex-shrink: 0; }
+  .s-todo { background: var(--gray-50); color: var(--gray-800); }
+  .s-doing { background: var(--blue-50); color: var(--blue-800); }
+  .s-done { background: var(--green-50); color: var(--green-800); }
+  .mock-deadline { font-size: 10px; color: var(--text-tertiary); display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
+  .mock-add { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--blue-800); background: var(--blue-50); border: 1px solid var(--blue-100); border-radius: 6px; padding: 5px 10px; margin-top: 4px; }
+
+  .delivery-card {
+    border-radius: var(--radius-lg); padding: 20px;
+    border: 2px solid var(--green-400);
+    background: var(--surface);
+    margin-bottom: 12px;
+  }
+  .delivery-list { list-style: none; }
+  .delivery-item {
+    display: flex; gap: 8px; padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px; color: var(--text-primary); line-height: 1.5; align-items: flex-start;
+  }
+  .delivery-item:last-child { border-bottom: none; }
+  .delivery-icon { font-size: 14px; color: var(--text-tertiary); flex-shrink: 0; margin-top: 2px; }
+
+  .score-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 9px 0; border-bottom: 1px solid var(--border);
+  }
+  .score-row:last-child { border-bottom: none; }
+  .score-label { flex: 1; font-size: 14px; color: var(--text-primary); line-height: 1.5; }
+  .score-label small { font-size: 12px; color: var(--text-tertiary); display: block; margin-top: 1px; }
+  .score-bar-bg { width: 80px; height: 5px; background: var(--gray-50); border-radius: 4px; flex-shrink: 0; border: 1px solid var(--border); }
+  .score-bar { height: 5px; border-radius: 4px; }
+  .score-pts { font-size: 12px; font-weight: 500; color: var(--text-secondary); width: 34px; text-align: right; flex-shrink: 0; }
+
+  .doc-footer { border-top: 1px solid var(--border); padding-top: 20px; margin-top: 48px; }
+  .doc-footer p { font-size: 13px; color: var(--text-tertiary); line-height: 1.7; }
+
+  @media print {
+    body { background: #fff; }
+    .page { padding: 32px 32px 60px; }
+    .chapter-break { page-break-before: always; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- DOC HEADER -->
+  <div class="doc-header">
+    <div class="doc-logo">
+      <div class="doc-logo-dot">U</div>
+      <span class="doc-logo-name">UEX Startup Studio</span>
+    </div>
+    <h1 class="doc-title">Perfil de vaga e case de seleção</h1>
+    <p class="doc-subtitle">Documento de referência para contratação PJ — Desenvolvedor Fullstack</p>
+    <div class="doc-meta">
+      <span class="doc-meta-item">Contrato PJ</span>
+      <span class="doc-meta-dot"></span>
+      <span class="doc-meta-item">Nível sênior</span>
+      <span class="doc-meta-dot"></span>
+      <span class="doc-meta-item">Startup Studio</span>
+      <span class="doc-meta-dot"></span>
+      <span class="doc-meta-item">2025</span>
+    </div>
+  </div>
+
+
+  <!-- PERFIL — DESENVOLVEDOR FULLSTACK -->
+  <p class="sec-label">Perfil de função</p>
+
+  <div class="profile-header">
+    <span class="profile-tag tag-green">Contrato PJ</span>
+    <h2 class="profile-title">Desenvolvedor Fullstack</h2>
+    <p class="profile-org">UEX Startup Studio</p>
+    <div class="meta-row">
+      <span class="meta-item">💼 PJ — Pessoa Jurídica</span>
+      <span class="meta-item">🏅 Sênior</span>
+      <span class="meta-item">👥 Time interno</span>
+      <span class="meta-item">🏢 Startup Studio</span>
+    </div>
+  </div>
+
+  <div class="notice notice-warn">
+    <span class="notice-icon">⚠</span>
+    <span>A linguagem-alvo e o stack tecnológico são definidos projeto a projeto e especificados no aditivo de contratação correspondente. Os requisitos de base listados abaixo aplicam-se a todas as contratações desta função.</span>
+  </div>
+
+  <p class="sec-label">Sobre a função</p>
+  <div class="card">
+    <p>O <strong>Desenvolvedor Fullstack</strong> na UEX é responsável pelo desenvolvimento técnico completo dos produtos das startups do portfólio — cobrindo frontend, backend, integrações e banco de dados. Atua com base em especificações detalhadas (Spec) e incorpora ferramentas de inteligência artificial como parte central do seu fluxo de trabalho, acelerando ciclos de desenvolvimento sem abrir mão de qualidade, rastreabilidade e boas práticas de engenharia.</p>
+  </div>
+
+  <p class="sec-label">Responsabilidades</p>
+  <div class="card">
+    <ul class="resp-list">
+      <li class="resp-item">
+        <span class="resp-icon">💻</span>
+        <div class="resp-text">Desenvolver funcionalidades fullstack conforme a linguagem-alvo e o stack definidos para cada projeto
+          <small>Frontend, backend, APIs e integrações com serviços externos</small>
+        </div>
+      </li>
+      <li class="resp-item">
+        <span class="resp-icon">📄</span>
+        <div class="resp-text">Ler, interpretar e implementar a partir de Specs técnicas fornecidas pelo time de produto
+          <small>Garantindo aderência ao escopo e alinhamento com as decisões de UX e arquitetura</small>
+        </div>
+      </li>
+      <li class="resp-item">
+        <span class="resp-icon">🤖</span>
+        <div class="resp-text">Utilizar ferramentas de IA como parte ativa do processo de desenvolvimento
+          <small>Geração de código, revisão automatizada, testes, documentação e refatoração assistida</small>
+        </div>
+      </li>
+      <li class="resp-item">
+        <span class="resp-icon">🗄️</span>
+        <div class="resp-text">Modelar, implementar e manter bancos de dados relacionais e não-relacionais
+          <small>Incluindo queries, migrations, otimização de performance e integridade de dados</small>
+        </div>
+      </li>
+      <li class="resp-item">
+        <span class="resp-icon">📈</span>
+        <div class="resp-text">Compreender e analisar dados do produto para apoiar decisões técnicas e de negócio
+          <small>Construção de relatórios, pipelines simples e leitura crítica de métricas</small>
+        </div>
+      </li>
+      <li class="resp-item">
+        <span class="resp-icon">🌿</span>
+        <div class="resp-text">Manter boas práticas de versionamento, revisão de código e documentação técnica
+          <small>Garantindo rastreabilidade e qualidade ao longo do ciclo de desenvolvimento</small>
+        </div>
+      </li>
+      <li class="resp-item">
+        <span class="resp-icon">🔗</span>
+        <div class="resp-text">Colaborar com o Product Experience no refinamento técnico de jornadas e interfaces
+          <small>Viabilizando tecnicamente as decisões de produto e UX dentro do prazo acordado</small>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <p class="sec-label">Requisitos de IA no desenvolvimento</p>
+  <div class="card">
+    <div class="ai-block">
+      <p>Desenvolvimento assistido por IA (AI-assisted coding)
+        <small>Cursor, GitHub Copilot, Windsurf ou equivalentes — uso fluente no dia a dia, não eventual</small>
+      </p>
+    </div>
+    <div class="ai-block">
+      <p>Trabalho com Spec gerada ou co-gerada por IA
+        <small>Capacidade de consumir, questionar e implementar especificações técnicas produzidas com auxílio de LLMs</small>
+      </p>
+    </div>
+    <div class="ai-block">
+      <p>Prompting técnico e engenharia de contexto
+        <small>Saber estruturar prompts para geração de código, refatoração, revisão e testes automatizados</small>
+      </p>
+    </div>
+    <div class="ai-block">
+      <p>Revisão crítica de código gerado por IA
+        <small>Identificar alucinações, vulnerabilidades e desvios de boas práticas no código sugerido por modelos</small>
+      </p>
+    </div>
+    <div class="ai-block" style="margin-bottom:0">
+      <p>Uso de agentes de IA para tarefas de desenvolvimento
+        <small>Claude Code, Devin, Aider ou similares para automação de tasks, debugging e geração de testes</small>
+      </p>
+    </div>
+  </div>
+
+  <p class="sec-label">Requisitos técnicos</p>
+  <div class="two-col">
+    <div class="card">
+      <p style="font-size:13px; font-weight:500; color:var(--text-secondary); margin-bottom:10px;">Obrigatórios</p>
+      <ul class="req-list">
+        <li class="req-item"><span class="req-icon">✓</span>
+          <div>Desenvolvimento fullstack com proficiência na linguagem-alvo do projeto
+            <small>Definida no aditivo de contratação</small>
+          </div>
+        </li>
+        <li class="req-item"><span class="req-icon">✓</span>
+          <div>Banco de dados relacional
+            <small>PostgreSQL e MySQL obrigatórios; outros conforme especificado na vaga</small>
+          </div>
+        </li>
+        <li class="req-item"><span class="req-icon">✓</span><div>Leitura, análise e implementação a partir de Specs técnicas</div></li>
+        <li class="req-item"><span class="req-icon">✓</span>
+          <div>Uso fluente de ferramentas de IA para desenvolvimento
+            <small>Cursor, Copilot, Windsurf, Claude Code, entre outros</small>
+          </div>
+        </li>
+        <li class="req-item"><span class="req-icon">✓</span><div>Desenvolvimento e consumo de APIs REST</div></li>
+        <li class="req-item"><span class="req-icon">✓</span><div>Versionamento com Git e práticas de code review</div></li>
+        <li class="req-item"><span class="req-icon">✓</span>
+          <div>Capacidade de análise e interpretação de dados
+            <small>Queries analíticas, leitura de logs, métricas de produto</small>
+          </div>
+        </li>
+      </ul>
+    </div>
+    <div class="card">
+      <p style="font-size:13px; font-weight:500; color:var(--text-secondary); margin-bottom:10px;">Diferenciais</p>
+      <ul class="req-list">
+        <li class="req-item"><span class="req-icon">★</span>
+          <div>Banco de dados não-relacional
+            <small>MongoDB, Redis, Firestore ou similares</small>
+          </div>
+        </li>
+        <li class="req-item"><span class="req-icon">★</span><div>Experiência com infraestrutura em nuvem (AWS, GCP ou Azure)</div></li>
+        <li class="req-item"><span class="req-icon">★</span><div>Conhecimento em CI/CD e pipelines de deploy</div></li>
+        <li class="req-item"><span class="req-icon">★</span><div>Vivência em ambiente de startup ou produto em estágio inicial</div></li>
+        <li class="req-item"><span class="req-icon">★</span><div>Experiência com testes automatizados (unitários, integração, e2e)</div></li>
+        <li class="req-item"><span class="req-icon">★</span><div>Leitura de interfaces e compreensão básica de UX/UI</div></li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="sec-label">Competências comportamentais</p>
+  <div class="card">
+    <div class="badge-row">
+      <span class="badge" style="background:var(--purple-50);color:var(--purple-800)">Resolução de problemas</span>
+      <span class="badge" style="background:var(--blue-50);color:var(--blue-800)">Atenção ao detalhe</span>
+      <span class="badge" style="background:var(--teal-50);color:var(--teal-800)">Aprendizado contínuo</span>
+      <span class="badge" style="background:var(--purple-50);color:var(--purple-800)">Comunicação técnica clara</span>
+      <span class="badge" style="background:var(--amber-50);color:var(--amber-800)">Mentalidade AI-first</span>
+      <span class="badge" style="background:var(--gray-50);color:var(--gray-800)">Autonomia e senso de prazo</span>
+      <span class="badge" style="background:var(--blue-50);color:var(--blue-800)">Colaboração com produto</span>
+    </div>
+  </div>
+
+
+  <!-- CASE DE SELEÇÃO -->
+  <div class="chapter-break">
+    <p class="sec-label">Case de seleção</p>
+
+    <div class="profile-header">
+      <h2 class="profile-title">Taskly — sistema de gestão de tarefas</h2>
+      <p class="profile-org">Desafio técnico aplicado à vaga de Desenvolvedor Fullstack</p>
+      <div class="meta-row" style="margin-top:14px">
+        <span class="meta-item">📅 Prazo de entrega: 3 dias corridos</span>
+        <span class="meta-item">👁 Critérios de avaliação visíveis</span>
+      </div>
+    </div>
+
+    <div class="notice notice-warn">
+      <span class="notice-icon">💡</span>
+      <span>Este case é intencionalmente aberto. O escopo mínimo está descrito abaixo, mas o que vai além dele é parte fundamental da avaliação. Criatividade, senso estético, decisões técnicas e como você comunica suas escolhas importam tanto quanto a entrega funcional. Surpreenda-nos.</span>
+    </div>
+
+    <p class="sec-label">O desafio</p>
+    <div class="card">
+      <p style="margin-bottom:16px">Construa o <strong>Taskly</strong>, um sistema web de gestão de tarefas pessoais. O usuário deve conseguir criar uma conta própria (sem integração obrigatória com Google ou Microsoft), organizar seu trabalho em projetos e gerenciar tarefas dentro de cada projeto.</p>
+      <div class="spec-row">
+        <span style="font-size:16px;flex-shrink:0;margin-top:1px">👤</span>
+        <div>Autenticação própria (e-mail e senha)
+          <small>Cadastro, login e sessão persistente. Sem OAuth obrigatório.</small>
+        </div>
+      </div>
+      <div class="spec-row">
+        <span style="font-size:16px;flex-shrink:0;margin-top:1px">📁</span>
+        <div>Projetos
+          <small>O usuário pode criar, nomear e organizar múltiplos projetos.</small>
+        </div>
+      </div>
+      <div class="spec-row">
+        <span style="font-size:16px;flex-shrink:0;margin-top:1px">☑️</span>
+        <div>Tarefas por projeto com os seguintes campos: título, descrição curta, descrição completa, prazo (data e hora), tags, anexos e/ou fotos
+          <small>Todos os campos devem ser editáveis após a criação.</small>
+        </div>
+      </div>
+      <div class="spec-row">
+        <span style="font-size:16px;flex-shrink:0;margin-top:1px">🗂️</span>
+        <div>Visualização em lista e kanban
+          <small>O usuário pode alternar entre as duas visões por meio de um botão de toggle.</small>
+        </div>
+      </div>
+      <div class="spec-row">
+        <span style="font-size:16px;flex-shrink:0;margin-top:1px">🔘</span>
+        <div>Status das tarefas: Não iniciada, Em andamento, Concluída, Cancelada
+          <small>Atualizável pelo usuário a qualquer momento.</small>
+        </div>
+      </div>
+    </div>
+
+    <p class="sec-label">Mock de referência — mínimo esperado</p>
+    <div class="notice notice-info">
+      <span class="notice-icon">ℹ</span>
+      <span>Este mock é apenas uma referência de escopo, não um wireframe a ser seguido. A identidade visual, a arquitetura de navegação e as decisões de UX são totalmente livres — e serão avaliadas.</span>
+    </div>
+
+    <div class="mock-frame">
+      <div class="mock-topbar">
+        <span style="font-size:15px">☑️</span>
+        <span class="mock-app-name">Taskly</span>
+        <span class="mock-project">Projeto: Website redesign</span>
+        <div class="mock-toggle">
+          <span class="mock-view-btn active">≡ Lista</span>
+          <span class="mock-view-btn">⊞ Kanban</span>
+        </div>
+      </div>
+      <div class="mock-body">
+        <div class="mock-nav">
+          <p class="mock-nav-label">Projetos</p>
+          <div class="mock-nav-item active">📁 Website redesign</div>
+          <div class="mock-nav-item">📁 App mobile</div>
+          <div class="mock-nav-item">📁 Onboarding v2</div>
+          <div class="mock-nav-item new">+ Novo projeto</div>
+        </div>
+        <div class="mock-tasks">
+          <div class="mock-task">
+            <span class="mock-grip">⠿</span>
+            <div class="mock-task-info">
+              <div class="mock-task-title">Redesenhar tela de login</div>
+              <div class="mock-task-desc">Criar nova proposta de UI para autenticação</div>
+            </div>
+            <span class="mock-tag">design</span>
+            <span class="mock-status s-doing">Em andamento</span>
+            <span class="mock-deadline">🕐 28/06</span>
+          </div>
+          <div class="mock-task">
+            <span class="mock-grip">⠿</span>
+            <div class="mock-task-info">
+              <div class="mock-task-title">Mapear jornada de onboarding</div>
+              <div class="mock-task-desc">Documentar fluxo atual e pontos de atrito</div>
+            </div>
+            <span class="mock-tag">ux</span>
+            <span class="mock-status s-todo">Não iniciada</span>
+            <span class="mock-deadline">🕐 30/06</span>
+          </div>
+          <div class="mock-task">
+            <span class="mock-grip">⠿</span>
+            <div class="mock-task-info">
+              <div class="mock-task-title">Validar componentes com dev</div>
+              <div class="mock-task-desc">Alinhar tokens de design com time técnico</div>
+            </div>
+            <span class="mock-tag">dev</span>
+            <span class="mock-status s-done">Concluída</span>
+            <span class="mock-deadline">🕐 24/06</span>
+          </div>
+          <span class="mock-add">+ Nova tarefa</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="sec-label">Modelo de entrega</p>
+    <div class="delivery-card">
+      <span class="profile-tag tag-green" style="margin-bottom:12px;display:inline-block">Desenvolvedor Fullstack</span>
+      <ul class="delivery-list">
+        <li class="delivery-item"><span class="delivery-icon">🐙</span>Repositório público no GitHub com código-fonte completo</li>
+        <li class="delivery-item"><span class="delivery-icon">📄</span>README, Spec técnica e registro dos prompts utilizados no desenvolvimento</li>
+        <li class="delivery-item"><span class="delivery-icon">🔗</span>Link de acesso à aplicação (deploy), se possível</li>
+        <li class="delivery-item"><span class="delivery-icon">🎥</span>Vídeo explicando a arquitetura, decisões técnicas e demonstrando a aplicação</li>
+        <li class="delivery-item"><span class="delivery-icon">🤖</span>Documente como a IA foi usada — ferramentas, prompts relevantes e onde você revisou ou corrigiu o output gerado</li>
+      </ul>
+    </div>
+
+    <p class="sec-label">Critérios de avaliação</p>
+    <div class="card">
+      <div class="score-row">
+        <div class="score-label">Funcionalidade e completude técnica<small>O sistema funciona conforme o escopo? Sem bugs críticos?</small></div>
+        <div class="score-bar-bg"><div class="score-bar" style="width:100%;background:#639922"></div></div>
+        <span class="score-pts">30 pts</span>
+      </div>
+      <div class="score-row">
+        <div class="score-label">Qualidade do código e arquitetura<small>Organização, legibilidade, separação de responsabilidades</small></div>
+        <div class="score-bar-bg"><div class="score-bar" style="width:67%;background:#639922"></div></div>
+        <span class="score-pts">20 pts</span>
+      </div>
+      <div class="score-row">
+        <div class="score-label">Uso de IA no desenvolvimento<small>Qualidade dos prompts, rastreabilidade, revisão crítica do output gerado</small></div>
+        <div class="score-bar-bg"><div class="score-bar" style="width:67%;background:#639922"></div></div>
+        <span class="score-pts">20 pts</span>
+      </div>
+      <div class="score-row">
+        <div class="score-label">Documentação (README, Spec, prompts)<small>Clareza, rastreabilidade das decisões técnicas</small></div>
+        <div class="score-bar-bg"><div class="score-bar" style="width:50%;background:#639922"></div></div>
+        <span class="score-pts">15 pts</span>
+      </div>
+      <div class="score-row">
+        <div class="score-label">Apresentação em vídeo e comunicação técnica<small>Capacidade de explicar arquitetura e decisões com clareza</small></div>
+        <div class="score-bar-bg"><div class="score-bar" style="width:17%;background:#639922"></div></div>
+        <span class="score-pts">5 pts</span>
+      </div>
+      <div class="score-row">
+        <div class="score-label">O que foi além do escopo mínimo<small>Features extras, testes, performance, deploy</small></div>
+        <div class="score-bar-bg"><div class="score-bar" style="width:33%;background:#639922"></div></div>
+        <span class="score-pts">10 pts</span>
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      <p>Dúvidas sobre o case? Entre em contato antes de iniciar. Após o envio, pode ser agendada uma sessão de apresentação para aprofundar as decisões tomadas.</p>
+      <p style="margin-top:8px">UEX Startup Studio · 2025</p>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
