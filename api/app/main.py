@@ -1,14 +1,13 @@
-"""Entrypoint da API — cria a app, registra routers e handlers de exceção de domínio.
-
-CORS é configurado no T11 (spec/tasks.md), junto com a integração do frontend.
-"""
+"""Entrypoint da API — cria a app, registra routers, CORS e handlers de exceção."""
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 from app.api.v1 import api_router
+from app.config import get_settings
 from app.database import engine
 from app.exceptions.domain_exceptions import (
     ConflictError,
@@ -19,6 +18,15 @@ from app.exceptions.domain_exceptions import (
 
 app = FastAPI(title="Taskly API")
 app.include_router(api_router, prefix="/api/v1")
+
+# Cookie de sessão exige credentials + origem explícita — nunca "*" (ADR-001)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=get_settings().cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def _domain_handler(status_code: int):
