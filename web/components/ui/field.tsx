@@ -1,6 +1,6 @@
 "use client";
 
-import type { InputHTMLAttributes, ReactNode } from "react";
+import type { InputHTMLAttributes, ReactNode, Ref } from "react";
 
 interface FieldProps extends InputHTMLAttributes<HTMLInputElement> {
   id: string;
@@ -8,6 +8,7 @@ interface FieldProps extends InputHTMLAttributes<HTMLInputElement> {
   // erro inline abaixo do input, ligado via aria-describedby (T26 §7)
   error?: ReactNode;
   helperText?: string;
+  ref?: Ref<HTMLInputElement>;
 }
 
 export function Field({

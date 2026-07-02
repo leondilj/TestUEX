@@ -38,13 +38,13 @@ export interface TaskSummary {
   due_date: string | null;
   status: TaskStatus;
   tags: string[];
+  created_at: string;
 }
 
 // Detalhe completo de GET /tasks/{id}
 export interface Task extends TaskSummary {
   project_id: string;
   full_description: string | null;
-  created_at: string;
   updated_at: string;
   attachments: Attachment[];
 }
