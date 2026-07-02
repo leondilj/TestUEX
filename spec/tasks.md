@@ -86,7 +86,7 @@ Then apenas as tarefas "not_started" são retornadas
 ## Layer: Frontend — Core
 
 - [x] T28 Implementar `api-client.ts` (fetch com `credentials: "include"`) e `types.ts` (espelhando `spec/data-model.md`) — Priority: P1 | Agent: frontend-engineer | Depends on: T05
-- [ ] T29 Telas de login/cadastro (`(auth)/login`, `(auth)/register`) + guarda de rota autenticada — Priority: P1 | Agent: frontend-engineer | Depends on: T28, T09, T26
+- [x] T29 Telas de login/cadastro (`(auth)/login`, `(auth)/register`) + guarda de rota autenticada — Priority: P1 | Agent: frontend-engineer | Depends on: T28, T09, T26
 - [ ] T30 Lista de projetos (`(app)/projects`) — criar/editar/excluir projeto — Priority: P1 | Agent: frontend-engineer | Depends on: T29, T15
 - [ ] T31 Lista/kanban de tarefas (`[projectId]/page.tsx`) com toggle de visualização — Priority: P1 | Agent: frontend-engineer | Depends on: T30, T20, T27
 - [ ] T32 Controle de status explícito no card (lista e kanban) — dropdown/botão que chama `PATCH /tasks/{id}` com `{ status }`, sem drag-and-drop (ver `ADR-004`) — Priority: P1 | Agent: frontend-engineer | Depends on: T31

@@ -1,26 +1,37 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* Tokens da identidade visual — ux-spec-navigation-and-identity.md §3 */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-paper: #faf8f5;
+  --color-surface: #ffffff;
+  --color-ink: #1c1b1a;
+  --color-ink-muted: #57534e;
+  --color-accent: #0f766e;
+  --color-accent-hover: #115e59;
+  --color-line: #e7e2db;
+  --color-danger: #be123c;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-status-not-started-fg: #44403c;
+  --color-status-not-started-bg: #f5f5f4;
+  --color-status-in-progress-fg: #b45309;
+  --color-status-in-progress-bg: #fffbeb;
+  --color-status-done-fg: #15803d;
+  --color-status-done-bg: #f0fdf4;
+  --color-status-cancelled-fg: #be123c;
+  --color-status-cancelled-bg: #fff1f2;
+
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), var(--font-inter), sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Anel de foco visível em qualquer fundo — nunca outline:none sem substituto */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
