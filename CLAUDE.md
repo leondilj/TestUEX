@@ -11,7 +11,11 @@ Teste técnico para a vaga de Desenvolvedor Fullstack na UEX Startup Studio. Ver
 - **Assistente (extensão):** Anthropic Claude API (tool use), rodando no mesmo processo da API FastAPI — sem servidor MCP externo por enquanto (ver `ADR-003`)
 - **Explicitamente fora da stack:** MongoDB, Redis (decisão do usuário, para não consumir tempo do prazo); servidor MCP externo/stdio (adiado, ver `ADR-003`)
 
-## Agents relevantes
+## Agents
+
+Este projeto tem **um único agent próprio**: `.claude/agents/taskly.md`. Ele é o ponto de entrada de qualquer tarefa do case — concentra o contexto (spec/, ADRs, prazo, critérios de avaliação, ordem de prioridade) e roteia para os agents **globais** (`~/.claude/agents/`) quando a tarefa exige um especialista. Não criar outros agents no repositório.
+
+### Agents globais para os quais o taskly roteia
 - **python-architect** — já gerou `spec/architecture.md`, `spec/data-model.md`, `spec/api.md`, `spec/tools.md`, `spec/prompts.md` para o backend FastAPI e a extensão do assistente
 - **python-developer** — implementa endpoints, autenticação, CRUD de projetos/tarefas e o `assistant_service`/tools
 - **ai-engineer** — apoia no tool-use loop com a API Anthropic e no ajuste fino do system prompt (`spec/prompts.md`) contra alucinação
