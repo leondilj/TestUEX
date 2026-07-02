@@ -4,6 +4,7 @@ Os testes rodam contra um banco Postgres dedicado (`taskly_test` por default),
 nunca contra o banco de dev. `TEST_DATABASE_URL` sobrescreve o destino (CI).
 """
 import os
+import tempfile
 
 # Ambiente configurado ANTES de importar a app — Settings/engine leem no import
 os.environ["DATABASE_URL"] = os.environ.get(
@@ -11,6 +12,8 @@ os.environ["DATABASE_URL"] = os.environ.get(
     "postgresql+asyncpg://taskly:taskly@localhost:5432/taskly_test",
 )
 os.environ.setdefault("JWT_SECRET", "test-secret")
+# Uploads de teste em diretório temporário — nunca no uploads/ real
+os.environ["UPLOAD_DIR"] = tempfile.mkdtemp(prefix="taskly_test_uploads_")
 
 import httpx
 import pytest

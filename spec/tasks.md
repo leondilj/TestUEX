@@ -69,10 +69,10 @@ Then apenas as tarefas "not_started" são retornadas
 
 ## Layer: Backend — Attachments
 
-- [ ] T22 Migration Alembic da tabela `Attachment` — Priority: P1 | Agent: python-developer | Depends on: T18
-- [ ] T23 Implementar `attachment_repository.py`, `attachment_service.py` (limite 10MB, tipos permitidos configuráveis via `config.py`, ver `spec/data-model.md`), `attachment_schema.py` — Priority: P1 | Agent: python-developer | Depends on: T22
-- [ ] T24 Implementar `attachments_router.py`: `POST/GET /tasks/{id}/attachments`, `GET /attachments/{id}/download`, `DELETE /attachments/{id}` — Priority: P1 | Agent: python-developer | Depends on: T23
-- [ ] T25 Testes pytest de `attachments`: upload válido, tipo/tamanho inválido (400), download, delete, 404 cross-user — Priority: P1 | Agent: python-test-engineer | Depends on: T24
+- [x] T22 Migration Alembic da tabela `Attachment` — Priority: P1 | Agent: python-developer | Depends on: T18
+- [x] T23 Implementar `attachment_repository.py`, `attachment_service.py` (limite 10MB, tipos permitidos configuráveis via `config.py`, ver `spec/data-model.md`), `attachment_schema.py` — Priority: P1 | Agent: python-developer | Depends on: T22
+- [x] T24 Implementar `attachments_router.py`: `POST/GET /tasks/{id}/attachments`, `GET /attachments/{id}/download`, `DELETE /attachments/{id}` — Priority: P1 | Agent: python-developer | Depends on: T23
+- [x] T25 Testes pytest de `attachments`: upload válido, tipo/tamanho inválido (400), download, delete, 404 cross-user — Priority: P1 | Agent: python-test-engineer | Depends on: T24
 
 ---
 
