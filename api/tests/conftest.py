@@ -22,6 +22,7 @@ from app.main import app
 from app.models.base import Base
 
 TEST_USER = {"email": "tester@example.com", "password": "senha-forte-123"}
+OTHER_USER = {"email": "other@example.com", "password": "senha-forte-456"}
 
 
 async def _ensure_test_database() -> None:
@@ -70,3 +71,15 @@ async def auth_client(client):
     resp = await client.post("/api/v1/auth/login", json=TEST_USER)
     assert resp.status_code == 200, resp.text
     return client
+
+
+@pytest.fixture
+async def other_auth_client(db_schema):
+    """Segundo usuário logado, com cookie jar próprio — para testes cross-user (404)."""
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
+        resp = await c.post("/api/v1/auth/register", json=OTHER_USER)
+        assert resp.status_code == 201, resp.text
+        resp = await c.post("/api/v1/auth/login", json=OTHER_USER)
+        assert resp.status_code == 200, resp.text
+        yield c
