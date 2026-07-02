@@ -53,10 +53,10 @@ Then a conta é criada (201) e a senha nunca é retornada ou logada em texto pur
 
 ## Layer: Backend — Tasks
 
-- [ ] T18 Migration Alembic da tabela `Task` (enum `status`, `text[]` de `tags`, `CHECK` constraint) — Priority: P1 | Agent: python-developer | Depends on: T13
-- [ ] T19 Implementar `task_repository.py` (`list_by_project` ordenado por `created_at ASC`, ver `ADR-004`), `task_service.py` (normalização de tags para lowercase/strip, ver `ADR-002`), `task_schema.py` — Priority: P1 | Agent: python-developer | Depends on: T18
-- [ ] T20 Implementar `tasks_router.py`: `GET /projects/{id}/tasks` (filtros `status`/`tag`), `POST /projects/{id}/tasks`, `GET/PATCH/DELETE /tasks/{id}` — Priority: P1 | Agent: python-developer | Depends on: T19
-- [ ] T21 Testes pytest de `tasks`: CRUD completo, todos os 4 status, filtro por status/tag, edição de qualquer campo, ordenação por `created_at`, 404 cross-user — Priority: P1 | Agent: python-test-engineer | Depends on: T20
+- [x] T18 Migration Alembic da tabela `Task` (enum `status`, `text[]` de `tags`, `CHECK` constraint) — Priority: P1 | Agent: python-developer | Depends on: T13
+- [x] T19 Implementar `task_repository.py` (`list_by_project` ordenado por `created_at ASC`, ver `ADR-004`), `task_service.py` (normalização de tags para lowercase/strip, ver `ADR-002`), `task_schema.py` — Priority: P1 | Agent: python-developer | Depends on: T18
+- [x] T20 Implementar `tasks_router.py`: `GET /projects/{id}/tasks` (filtros `status`/`tag`), `POST /projects/{id}/tasks`, `GET/PATCH/DELETE /tasks/{id}` — Priority: P1 | Agent: python-developer | Depends on: T19
+- [x] T21 Testes pytest de `tasks`: CRUD completo, todos os 4 status, filtro por status/tag, edição de qualquer campo, ordenação por `created_at`, 404 cross-user (inclui o cascade delete adiado da T16) — Priority: P1 | Agent: python-test-engineer | Depends on: T20
 
 **Acceptance criteria (T20 — filtro):**
 ```
