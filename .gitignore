@@ -20,7 +20,8 @@ npm-debug.log*
 .env.*.local
 
 # Uploads (volume Docker — ver spec/architecture.md)
-api/uploads/
+api/uploads/*
+!api/uploads/.gitkeep
 
 # Editor / OS
 .vscode/

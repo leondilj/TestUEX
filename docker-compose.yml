@@ -1,0 +1,21 @@
+# Taskly — infra local (ver spec/architecture.md)
+# T02 adiciona o serviço `api` (Dockerfile + volume uploads/); `web` roda fora do compose em dev (npm run dev)
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: taskly
+      POSTGRES_PASSWORD: taskly
+      POSTGRES_DB: taskly
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskly -d taskly"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
