@@ -2,13 +2,15 @@
 
 import type { ButtonHTMLAttributes } from "react";
 
-type Variant = "primary" | "secondary" | "text" | "danger-text";
+type Variant = "primary" | "secondary" | "text" | "danger" | "danger-text";
 
 const VARIANT_CLASSES: Record<Variant, string> = {
   primary:
     "bg-accent text-white hover:bg-accent-hover disabled:hover:bg-accent",
   secondary: "border border-line bg-surface text-ink hover:bg-paper",
   text: "text-accent hover:underline",
+  // fundo vermelho sólido só na confirmação final (identidade, T26 §3)
+  danger: "bg-danger text-white hover:bg-danger-hover disabled:hover:bg-danger",
   "danger-text": "text-danger hover:underline",
 };
 
