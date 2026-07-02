@@ -9,8 +9,8 @@ IDs (`T01`, `T02`...) existem só para referenciar dependências dentro deste do
 ## Layer: Setup & Infra
 
 - [x] T01 Criar estrutura de monorepo (`api/`, `web/`, `docker-compose.yml`) conforme `spec/architecture.md` — Priority: P1 | Agent: devops-engineer | Depends on: none
-- [ ] T02 Configurar `docker-compose.yml` (api + postgres; volume `uploads/`) e `Dockerfile` da API — Priority: P1 | Agent: devops-engineer | Depends on: T01
-- [ ] T03 Scaffold do projeto FastAPI (`app/main.py`, `config.py`, camadas `api/services/repositories/models/schemas/exceptions/utils`) — Priority: P1 | Agent: python-developer | Depends on: T01
+- [x] T02 Configurar `docker-compose.yml` (api + postgres; volume `uploads/`) e `Dockerfile` da API — Priority: P1 | Agent: devops-engineer | Depends on: T01
+- [x] T03 Scaffold do projeto FastAPI (`app/main.py`, `config.py`, camadas `api/services/repositories/models/schemas/exceptions/utils`) — Priority: P1 | Agent: python-developer | Depends on: T01
 - [ ] T04 Configurar Alembic (`alembic.ini`, `env.py` assíncrono) — Priority: P1 | Agent: python-developer | Depends on: T03
 - [ ] T05 Scaffold do projeto Next.js (App Router, TypeScript, Tailwind, TanStack Query) — Priority: P1 | Agent: frontend-engineer | Depends on: T01
 
