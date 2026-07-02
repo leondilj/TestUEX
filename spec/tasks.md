@@ -78,14 +78,14 @@ Then apenas as tarefas "not_started" são retornadas
 
 ## Layer: Frontend — UX
 
-- [ ] T26 Definir fluxo de navegação (auth → lista de projetos → projeto → lista/kanban de tarefas), wireframes de baixa fidelidade e identidade visual — Priority: P1 | Agent: ux-developer | Depends on: none
-- [ ] T27 Especificar UX do toggle lista/kanban, do formulário de tarefa (todos os campos editáveis) e do upload de anexos — Priority: P1 | Agent: ux-developer | Depends on: T26
+- [x] T26 Definir fluxo de navegação (auth → lista de projetos → projeto → lista/kanban de tarefas), wireframes de baixa fidelidade e identidade visual — Priority: P1 | Agent: ux-developer | Depends on: none
+- [x] T27 Especificar UX do toggle lista/kanban, do formulário de tarefa (todos os campos editáveis) e do upload de anexos — Priority: P1 | Agent: ux-developer | Depends on: T26
 
 ---
 
 ## Layer: Frontend — Core
 
-- [ ] T28 Implementar `api-client.ts` (fetch com `credentials: "include"`) e `types.ts` (espelhando `spec/data-model.md`) — Priority: P1 | Agent: frontend-engineer | Depends on: T05
+- [x] T28 Implementar `api-client.ts` (fetch com `credentials: "include"`) e `types.ts` (espelhando `spec/data-model.md`) — Priority: P1 | Agent: frontend-engineer | Depends on: T05
 - [ ] T29 Telas de login/cadastro (`(auth)/login`, `(auth)/register`) + guarda de rota autenticada — Priority: P1 | Agent: frontend-engineer | Depends on: T28, T09, T26
 - [ ] T30 Lista de projetos (`(app)/projects`) — criar/editar/excluir projeto — Priority: P1 | Agent: frontend-engineer | Depends on: T29, T15
 - [ ] T31 Lista/kanban de tarefas (`[projectId]/page.tsx`) com toggle de visualização — Priority: P1 | Agent: frontend-engineer | Depends on: T30, T20, T27
