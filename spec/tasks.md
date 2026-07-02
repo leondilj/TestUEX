@@ -44,7 +44,7 @@ Then a conta é criada (201) e a senha nunca é retornada ou logada em texto pur
 
 ## Layer: Backend — Projects
 
-- [ ] T13 Migration Alembic da tabela `Project` — Priority: P1 | Agent: python-developer | Depends on: T06
+- [x] T13 Migration Alembic da tabela `Project` — Priority: P1 | Agent: python-developer | Depends on: T06
 - [ ] T14 Implementar `project_repository.py`, `project_service.py`, `project_schema.py` (todo acesso escopado a `user_id`) — Priority: P1 | Agent: python-developer | Depends on: T13, T10
 - [ ] T15 Implementar `projects_router.py`: `GET/POST /projects`, `GET/PATCH/DELETE /projects/{id}` — Priority: P1 | Agent: python-developer | Depends on: T14
 - [ ] T16 Testes pytest de `projects`: CRUD completo, 404 ao acessar projeto de outro usuário, cascade delete de tasks — Priority: P1 | Agent: python-test-engineer | Depends on: T15
