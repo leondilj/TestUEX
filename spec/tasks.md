@@ -11,8 +11,8 @@ IDs (`T01`, `T02`...) existem só para referenciar dependências dentro deste do
 - [x] T01 Criar estrutura de monorepo (`api/`, `web/`, `docker-compose.yml`) conforme `spec/architecture.md` — Priority: P1 | Agent: devops-engineer | Depends on: none
 - [x] T02 Configurar `docker-compose.yml` (api + postgres; volume `uploads/`) e `Dockerfile` da API — Priority: P1 | Agent: devops-engineer | Depends on: T01
 - [x] T03 Scaffold do projeto FastAPI (`app/main.py`, `config.py`, camadas `api/services/repositories/models/schemas/exceptions/utils`) — Priority: P1 | Agent: python-developer | Depends on: T01
-- [ ] T04 Configurar Alembic (`alembic.ini`, `env.py` assíncrono) — Priority: P1 | Agent: python-developer | Depends on: T03
-- [ ] T05 Scaffold do projeto Next.js (App Router, TypeScript, Tailwind, TanStack Query) — Priority: P1 | Agent: frontend-engineer | Depends on: T01
+- [x] T04 Configurar Alembic (`alembic.ini`, `env.py` assíncrono) — Priority: P1 | Agent: python-developer | Depends on: T03
+- [x] T05 Scaffold do projeto Next.js (App Router, TypeScript, Tailwind, TanStack Query) — Priority: P1 | Agent: frontend-engineer | Depends on: T01
 
 **Acceptance criteria (T02):**
 ```
@@ -25,7 +25,7 @@ Then a API sobe conectada ao Postgres, sem erro, na primeira tentativa
 
 ## Layer: Backend — Auth (ADR-001)
 
-- [ ] T06 Migration Alembic da tabela `User` (`spec/data-model.md`) — Priority: P1 | Agent: python-developer | Depends on: T04
+- [x] T06 Migration Alembic da tabela `User` (`spec/data-model.md`) — Priority: P1 | Agent: python-developer | Depends on: T04
 - [ ] T07 Implementar `user_repository.py`, `security.py` (hash/verify de senha, criação/validação de JWT) — Priority: P1 | Agent: python-developer | Depends on: T06
 - [ ] T08 Implementar `auth_service.py` + `auth_schema.py` (senha mínima 8 chars, ver `ADR-001`) — Priority: P1 | Agent: python-developer | Depends on: T07
 - [ ] T09 Implementar `auth_router.py`: `POST /auth/register`, `POST /auth/login` (seta cookie httpOnly), `POST /auth/logout`, `GET /auth/me` — Priority: P1 | Agent: python-developer | Depends on: T08
