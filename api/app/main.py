@@ -3,6 +3,8 @@
 CORS é configurado no T11 (spec/tasks.md), junto com a integração do frontend.
 """
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
@@ -25,6 +27,17 @@ def _domain_handler(status_code: int):
 
     return handler
 
+
+async def _validation_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    """Payload inválido responde 400, não o 422 default — contrato de spec/api.md.
+
+    Omite `input`/`ctx` do erro para nunca ecoar senha em texto puro (T09).
+    """
+    errors = [{"type": e["type"], "loc": e["loc"], "msg": e["msg"]} for e in exc.errors()]
+    return JSONResponse(status_code=400, content={"detail": jsonable_encoder(errors)})
+
+
+app.add_exception_handler(RequestValidationError, _validation_handler)
 
 # Ordem importa: subclasses antes da base, senão DomainError captura tudo como 400
 app.add_exception_handler(NotFoundError, _domain_handler(404))

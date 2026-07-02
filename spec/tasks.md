@@ -28,7 +28,7 @@ Then a API sobe conectada ao Postgres, sem erro, na primeira tentativa
 - [x] T06 Migration Alembic da tabela `User` (`spec/data-model.md`) — Priority: P1 | Agent: python-developer | Depends on: T04
 - [x] T07 Implementar `user_repository.py`, `security.py` (hash/verify de senha, criação/validação de JWT) — Priority: P1 | Agent: python-developer | Depends on: T06
 - [x] T08 Implementar `auth_service.py` + `auth_schema.py` (senha mínima 8 chars, ver `ADR-001`) — Priority: P1 | Agent: python-developer | Depends on: T07
-- [ ] T09 Implementar `auth_router.py`: `POST /auth/register`, `POST /auth/login` (seta cookie httpOnly), `POST /auth/logout`, `GET /auth/me` — Priority: P1 | Agent: python-developer | Depends on: T08
+- [x] T09 Implementar `auth_router.py`: `POST /auth/register`, `POST /auth/login` (seta cookie httpOnly), `POST /auth/logout`, `GET /auth/me` — Priority: P1 | Agent: python-developer | Depends on: T08
 - [x] T10 Implementar dependency `get_current_user` em `api/deps.py` (decodifica cookie, 401 se ausente/inválido/expirado) — Priority: P1 | Agent: python-developer | Depends on: T08
 - [ ] T11 Configurar CORS (`allow_credentials=True`, origem explícita do `web`) — Priority: P1 | Agent: python-developer | Depends on: T09
 - [ ] T12 Testes pytest de `auth`: registro (sucesso/409/400), login (sucesso/401), `me` (sucesso/401), logout — Priority: P1 | Agent: python-test-engineer | Depends on: T09, T10
