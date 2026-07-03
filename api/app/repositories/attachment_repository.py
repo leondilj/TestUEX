@@ -13,10 +13,16 @@ class AttachmentRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def list_by_task(self, task_id: uuid.UUID) -> list[Attachment]:
+    async def list_by_task(
+        self, task_id: uuid.UUID, user_id: uuid.UUID
+    ) -> list[Attachment]:
+        """`user_id` é filtro obrigatório (spec/architecture.md) — defesa em
+        profundidade além do `_ensure_task` do service."""
         result = await self._session.execute(
             select(Attachment)
-            .where(Attachment.task_id == task_id)
+            .join(Task, Attachment.task_id == Task.id)
+            .join(Project, Task.project_id == Project.id)
+            .where(Attachment.task_id == task_id, Project.user_id == user_id)
             .order_by(Attachment.created_at.asc())
         )
         return list(result.scalars().all())

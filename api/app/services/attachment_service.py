@@ -40,7 +40,7 @@ class AttachmentService:
         self, task_id: uuid.UUID, user_id: uuid.UUID
     ) -> list[Attachment]:
         await self._ensure_task(task_id, user_id)
-        return await self._attachments.list_by_task(task_id)
+        return await self._attachments.list_by_task(task_id, user_id)
 
     async def upload(
         self,

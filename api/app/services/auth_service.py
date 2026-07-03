@@ -1,6 +1,8 @@
 """Regra de negócio de autenticação — ver ADR-001."""
 import uuid
 
+from sqlalchemy.exc import IntegrityError
+
 from app.exceptions.domain_exceptions import ConflictError, InvalidCredentialsError
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
@@ -15,9 +17,14 @@ class AuthService:
         email = email.strip().lower()
         if await self._users.get_by_email(email) is not None:
             raise ConflictError("E-mail já cadastrado")
-        return await self._users.create(
-            email=email, password_hash=hash_password(password)
-        )
+        try:
+            return await self._users.create(
+                email=email, password_hash=hash_password(password)
+            )
+        except IntegrityError as exc:
+            # race: outro register do mesmo e-mail passou pelo check acima —
+            # a unique constraint é a barreira final e vira o mesmo 409
+            raise ConflictError("E-mail já cadastrado") from exc
 
     async def login(self, email: str, password: str) -> tuple[User, str]:
         """Valida credenciais e emite o JWT de sessão (o cookie é setado na camada api)."""

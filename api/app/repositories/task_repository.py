@@ -16,11 +16,20 @@ class TaskRepository:
     async def list_by_project(
         self,
         project_id: uuid.UUID,
+        user_id: uuid.UUID,
         status: str | None = None,
         tag: str | None = None,
     ) -> list[Task]:
-        """Ordenação fixa por created_at ASC — mais antiga primeiro (ADR-004)."""
-        query = select(Task).where(Task.project_id == project_id)
+        """Ordenação fixa por created_at ASC — mais antiga primeiro (ADR-004).
+
+        `user_id` é filtro obrigatório (spec/architecture.md) — defesa em
+        profundidade além do `_ensure_project` do service.
+        """
+        query = (
+            select(Task)
+            .join(Project, Task.project_id == Project.id)
+            .where(Task.project_id == project_id, Project.user_id == user_id)
+        )
         if status is not None:
             query = query.where(Task.status == status)
         if tag is not None:

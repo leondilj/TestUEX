@@ -41,7 +41,9 @@ class TaskService:
         await self._ensure_project(project_id, user_id)
         if tag is not None:
             tag = tag.strip().lower()  # tags são persistidas normalizadas
-        return await self._tasks.list_by_project(project_id, status=status, tag=tag)
+        return await self._tasks.list_by_project(
+            project_id, user_id, status=status, tag=tag
+        )
 
     async def create_task(
         self, project_id: uuid.UUID, user_id: uuid.UUID, data: dict[str, Any]
