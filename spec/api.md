@@ -153,7 +153,8 @@ Prefixo base: `/api/v1`
   "short_description": "Criar nova proposta de UI para autenticação",
   "due_date": "2026-06-28T18:00:00Z",
   "status": "in_progress",
-  "tags": ["design"]
+  "tags": ["design"],
+  "created_at": "2026-06-20T09:00:00Z"
 }]
 ```
 

@@ -98,8 +98,8 @@ Then apenas as tarefas "not_started" são retornadas
 
 ## Layer: Quality Gate
 
-- [ ] T36 Revisar backend completo (auth, projects, tasks, attachments) contra `spec/architecture.md` — camadas, exceções de domínio, escopo por usuário — Priority: P1 | Agent: code-reviewer | Depends on: T12, T16, T21, T25
-- [ ] T37 Revisar frontend completo contra a especificação de UX (T26/T27) e o contrato da API — Priority: P1 | Agent: code-reviewer | Depends on: T32, T33, T34, T35
+- [x] T36 Revisar backend completo (auth, projects, tasks, attachments) contra `spec/architecture.md` — camadas, exceções de domínio, escopo por usuário — Priority: P1 | Agent: code-reviewer | Depends on: T12, T16, T21, T25
+- [x] T37 Revisar frontend completo contra a especificação de UX (T26/T27) e o contrato da API — Priority: P1 | Agent: code-reviewer | Depends on: T32, T33, T34, T35
 
 ---
 
