@@ -9,7 +9,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://taskly:taskly@postgres:5432/taskly
       JWT_SECRET: dev-secret-change-me
     volumes:
-      - ./api/uploads:/app/uploads
+      - uploads_data:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -32,3 +32,4 @@ services:
 
 volumes:
   postgres_data:
+  uploads_data:
