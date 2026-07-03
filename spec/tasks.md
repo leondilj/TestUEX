@@ -92,7 +92,7 @@ Then apenas as tarefas "not_started" são retornadas
 - [x] T32 Controle de status explícito no card (lista e kanban) — dropdown/botão que chama `PATCH /tasks/{id}` com `{ status }`, sem drag-and-drop (ver `ADR-004`) — Priority: P1 | Agent: frontend-engineer | Depends on: T31
 - [x] T33 Formulário de tarefa (criar/editar todos os campos: título, descrições, prazo, tags) — Priority: P1 | Agent: frontend-engineer | Depends on: T31
 - [x] T34 UI de upload/listagem/remoção de anexos na tarefa — Priority: P1 | Agent: frontend-engineer | Depends on: T33, T24
-- [ ] T35 Filtro por status/tag na UI de lista/kanban — Priority: P2 | Agent: frontend-engineer | Depends on: T31
+- [x] T35 Filtro por status/tag na UI de lista/kanban — Priority: P2 | Agent: frontend-engineer | Depends on: T31
 
 ---
 

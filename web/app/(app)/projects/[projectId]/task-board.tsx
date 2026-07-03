@@ -24,6 +24,9 @@ const COLUMN_HEADING_CLASSES: Record<TaskStatus, string> = {
 
 interface TaskBoardProps {
   tasks: TaskSummary[];
+  // filtro de status ativo (T35): só a coluna dele fica visível — as
+  // demais colapsam; o filtro visível na barra explica o sumiço (T27 §2)
+  statusFilter?: TaskStatus;
   onOpenTask: (task: TaskSummary) => void;
   onChangeStatus: (task: TaskSummary, status: TaskStatus) => void;
 }
@@ -31,12 +34,18 @@ interface TaskBoardProps {
 // Modo kanban (T27 §2): 4 colunas fixas, sempre visíveis mesmo vazias.
 // Sem drag-and-drop (ADR-004) — mudança de status pelo select do card.
 // <1024px: scroll horizontal com snap, colunas ~280px.
-export function TaskBoard({ tasks, onOpenTask, onChangeStatus }: TaskBoardProps) {
+export function TaskBoard({
+  tasks,
+  statusFilter,
+  onOpenTask,
+  onChangeStatus,
+}: TaskBoardProps) {
   const headingPrefix = useId();
+  const columns = statusFilter ? [statusFilter] : TASK_STATUSES;
 
   return (
     <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 lg:grid lg:grid-cols-4 lg:overflow-visible">
-      {TASK_STATUSES.map((status) => {
+      {columns.map((status) => {
         const columnTasks = tasks.filter((task) => task.status === status);
         const headingId = `${headingPrefix}-${status}`;
         return (

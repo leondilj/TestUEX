@@ -1,8 +1,13 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
@@ -10,12 +15,14 @@ import { api, ApiError } from "@/lib/api-client";
 import { projectKeys, taskKeys } from "@/lib/query-keys";
 import {
   TASK_STATUS_LABELS,
+  type TaskFilters,
   type TaskStatus,
   type TaskSummary,
 } from "@/lib/types";
 
 import { TaskBoard } from "./task-board";
 import { TaskDrawer, type TaskDrawerState } from "./task-drawer";
+import { TaskFilterBar } from "./task-filter-bar";
 import { TaskList } from "./task-list";
 import { ViewToggle, type TaskView } from "./view-toggle";
 
@@ -30,11 +37,14 @@ function storedView(projectId: string): TaskView {
   return value === "kanban" ? "kanban" : "lista";
 }
 
-// Página do projeto (T31–T34): breadcrumb, toggle lista/kanban, mudança de
-// status otimista no card (T32/ADR-004) e drawer de criar/editar (T33/T34).
+// Página do projeto (T31–T35): breadcrumb, toggle lista/kanban, filtros por
+// status/tag (T35), mudança de status otimista no card (T32/ADR-004) e
+// drawer de criar/editar (T33/T34).
 export function TasksView({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
   const [view, setView] = useState<TaskView>(() => storedView(projectId));
+  // filtros sobrevivem à troca de visualização e ao drawer (T27 §2)
+  const [filters, setFilters] = useState<TaskFilters>({});
   const [drawer, setDrawer] = useState<TaskDrawerState | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   // live region global (T26 §7) — feedback não-visual de mudanças assíncronas
@@ -56,11 +66,29 @@ export function TasksView({ projectId }: { projectId: string }) {
       !(error instanceof ApiError && error.status === 404) && count < 2,
   });
 
+  // T35: filtros viram query params — a filtragem é do backend (T20).
+  // keepPreviousData evita o flash de skeleton a cada mudança de filtro.
   const tasks = useQuery({
+    queryKey: projectKeys.tasks(projectId, filters),
+    queryFn: () => api.tasks.list(projectId, filters),
+    enabled: project.isSuccess,
+    placeholderData: keepPreviousData,
+  });
+
+  // Coleção sem filtros alimenta as opções do select de tag (T27 §2). Sem
+  // filtro ativo a chave coincide com a query acima — nenhum request extra.
+  const allTasks = useQuery({
     queryKey: projectKeys.tasks(projectId),
     queryFn: () => api.tasks.list(projectId),
     enabled: project.isSuccess,
   });
+
+  const tagOptions = useMemo(() => {
+    const tags = new Set((allTasks.data ?? []).flatMap((task) => task.tags));
+    // tag filtrada some das tarefas (editada/excluída)? mantém no select
+    if (filters.tag) tags.add(filters.tag);
+    return [...tags].sort((a, b) => a.localeCompare(b));
+  }, [allTasks.data, filters.tag]);
 
   // título do documento por rota: "<nome do projeto> — Taskly" (T26 §7)
   useEffect(() => {
@@ -79,22 +107,21 @@ export function TasksView({ projectId }: { projectId: string }) {
     mutationFn: ({ task, status }: { task: TaskSummary; status: TaskStatus }) =>
       api.tasks.update(task.id, { status }),
     onMutate: async ({ task, status }) => {
+      // cancela pelo prefixo — pega a query filtrada e a de opções de tag
       await queryClient.cancelQueries({
         queryKey: projectKeys.tasks(projectId),
       });
-      const previous = queryClient.getQueryData<TaskSummary[]>(
-        projectKeys.tasks(projectId),
-      );
-      queryClient.setQueryData<TaskSummary[]>(
-        projectKeys.tasks(projectId),
-        (old) => old?.map((t) => (t.id === task.id ? { ...t, status } : t)),
+      const activeKey = projectKeys.tasks(projectId, filters);
+      const previous = queryClient.getQueryData<TaskSummary[]>(activeKey);
+      queryClient.setQueryData<TaskSummary[]>(activeKey, (old) =>
+        old?.map((t) => (t.id === task.id ? { ...t, status } : t)),
       );
       announce(`${task.title} movida para ${TASK_STATUS_LABELS[status]}`);
-      return { previous };
+      return { previous, activeKey };
     },
     onError: (_error, _variables, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(projectKeys.tasks(projectId), context.previous);
+        queryClient.setQueryData(context.activeKey, context.previous);
       }
       showToast(STATUS_UPDATE_ERROR);
     },
@@ -158,6 +185,7 @@ export function TasksView({ projectId }: { projectId: string }) {
 
   const loading = project.isPending || tasks.isPending;
   const empty = tasks.data?.length === 0;
+  const filtersActive = Boolean(filters.status || filters.tag);
 
   return (
     <>
@@ -173,8 +201,13 @@ export function TasksView({ projectId }: { projectId: string }) {
         <h1 className="min-w-0 truncate font-display text-2xl font-semibold">
           {project.data?.name ?? "…"}
         </h1>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <ViewToggle value={view} onChange={changeView} />
+          <TaskFilterBar
+            filters={filters}
+            tagOptions={tagOptions}
+            onChange={setFilters}
+          />
           <Button onClick={() => openDrawer({ kind: "create" })}>
             <span aria-hidden="true">+</span> Nova tarefa
           </Button>
@@ -189,6 +222,22 @@ export function TasksView({ projectId }: { projectId: string }) {
               className="h-14 animate-pulse rounded-[10px] border border-line bg-surface"
             />
           ))}
+        </div>
+      ) : empty && filtersActive ? (
+        <div className="flex flex-col items-center gap-3 rounded-[10px] border border-dashed border-line px-4 py-16 text-center">
+          <h2 className="font-display text-lg font-semibold">
+            Nenhuma tarefa encontrada
+          </h2>
+          <p className="text-sm text-ink-muted">
+            Ajuste os filtros ou limpe-os.
+          </p>
+          <button
+            type="button"
+            onClick={() => setFilters({})}
+            className="text-sm font-medium text-accent hover:underline"
+          >
+            Limpar filtros
+          </button>
         </div>
       ) : empty && view === "lista" ? (
         <div className="flex flex-col items-center gap-3 rounded-[10px] border border-dashed border-line px-4 py-16 text-center">
@@ -211,6 +260,7 @@ export function TasksView({ projectId }: { projectId: string }) {
       ) : (
         <TaskBoard
           tasks={tasks.data ?? []}
+          statusFilter={filters.status}
           onOpenTask={(task) => openDrawer({ kind: "edit", taskId: task.id })}
           onChangeStatus={(task, status) => changeStatus.mutate({ task, status })}
         />
