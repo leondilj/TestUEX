@@ -111,8 +111,8 @@ Then apenas as tarefas "not_started" são retornadas
 
 ## Layer: Documentation
 
-- [ ] T39 README com setup local-first (`docker-compose up` + `npm run dev`), variáveis de ambiente, decisões de stack — Priority: P1 | Agent: devops-engineer | Depends on: T38
-- [ ] T40 Consolidar/revisar `spec/prompts.md` como registro rastreável de uso de IA (ferramentas, prompts relevantes, onde o output foi revisado) — Priority: P1 | Agent: project-manager | Depends on: T36, T37
+- [x] T39 README com setup local-first (`docker-compose up` + `npm run dev`), variáveis de ambiente, decisões de stack — Priority: P1 | Agent: devops-engineer | Depends on: T38
+- [x] T40 Consolidar/revisar `spec/prompts.md` como registro rastreável de uso de IA (ferramentas, prompts relevantes, onde o output foi revisado) — Priority: P1 | Agent: project-manager | Depends on: T36, T37
 - [ ] T41 Gravar vídeo de arquitetura/decisões demonstrando a aplicação (canal principal de prova de funcionamento) — Priority: P1 | Agent: devops-engineer | Depends on: T39
 
 ---

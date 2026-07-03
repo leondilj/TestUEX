@@ -2,101 +2,151 @@
 
 Sistema web de gestão de tarefas pessoais — teste técnico para a vaga de Desenvolvedor Fullstack na **UEX Startup Studio**. Enunciado original em [`UEX Teste Técnico Vaga Dev Fullstack.md`](./UEX%20Teste%20Técnico%20Vaga%20Dev%20Fullstack.md).
 
-## Status atual
+O usuário cria a própria conta (e-mail/senha), organiza o trabalho em **projetos** e gerencia **tarefas** dentro de cada projeto, alternando livremente entre visualização em **lista** e **kanban**. Cada tarefa tem título, descrição curta e completa, prazo, tags, anexos/fotos e status (`Não iniciada`, `Em andamento`, `Concluída`, `Cancelada`) — todos os campos editáveis após a criação, com filtros por status e tag.
 
-🚧 **Fase de especificação (Spec-Driven Development) — implementação ainda não iniciada.**
+## Status
 
-Todo o projeto foi planejado antes de qualquer linha de código: visão de produto, arquitetura, contrato de API, modelo de dados, decisões técnicas (ADRs) e backlog sequenciado já estão prontos em [`spec/`](./spec). O código de `api/` (FastAPI) e `web/` (Next.js) ainda não existe neste repositório — as instruções de instalação/execução abaixo descrevem o que **vai** existir, conforme `spec/architecture.md` e `spec/tasks.md`.
-
-## O que é o Taskly
-
-O usuário cria sua própria conta (e-mail/senha, sem OAuth), organiza o trabalho em projetos e gerencia tarefas dentro de cada projeto, alternando entre visualização em lista e kanban. Cada tarefa tem título, descrições curta e completa, prazo, tags, anexos/fotos e status (`Não iniciada`, `Em andamento`, `Concluída`, `Cancelada`) — todos os campos editáveis após a criação.
-
-Como extensão além do escopo mínimo do case, o Taskly terá uma tela **"Assistente"**: um chat que usa a API da Anthropic (Claude, tool use) para consultar, criar tarefas e mudar status por linguagem natural, rodando no mesmo processo da API. Ver `spec/product.md` (seção "Extensão além do escopo mínimo") e `ADR-003`.
-
-## Stack definida
-
-| Camada | Tecnologia |
+| Entregável | Situação |
 |---|---|
-| Backend | Python + FastAPI, SQLAlchemy 2.0 (async) + Alembic |
-| Banco de dados | PostgreSQL 16 (via Docker) |
-| Frontend | Next.js 14+ (App Router, TypeScript), Tailwind CSS, TanStack Query |
-| Autenticação | JWT em cookie `httpOnly` (`ADR-001`) |
-| Assistente (extensão) | API Anthropic Claude (tool use), in-process — sem servidor MCP externo por enquanto (`ADR-003`) |
-| Testes | pytest + pytest-asyncio + `httpx.AsyncClient`, contra Postgres real |
-| CI/CD | GitHub Actions (lint + testes + build) |
-| Infra local | Docker Compose (api + postgres; web roda fora do compose em dev) |
+| Escopo mínimo do case (auth, projetos, tarefas lista/kanban, anexos, filtros) | ✅ Implementado e testado |
+| Testes automatizados (backend, contra Postgres real) | ✅ 65 testes |
+| Revisão de código (quality gate backend + frontend vs. spec) | ✅ T36/T37 |
+| CI (GitHub Actions: lint + testes + build) | 🔜 T38 |
+| Extensão: tela "Assistente" (Claude tool use) | 🔜 T42–T50 — especificada em `spec/tools.md`/`spec/prompts.md` |
+| Deploy | Opcional — só se sobrar tempo (decisão em `spec/product.md`) |
 
-Detalhes completos e justificativas em `spec/architecture.md` (Technology Decisions) e nos ADRs em `spec/decisions/`.
+## Como rodar (local-first)
 
-## Arquitetura
-
-Diagramas completos (visão geral do sistema e fluxo do Assistente) em [`spec/architecture.md`](./spec/architecture.md#system-overview). Resumo:
-
-```
-Browser → web (Next.js) → api (FastAPI: routers → services → repositories → models) → PostgreSQL
-                                                                                       ↳ uploads/ (anexos)
-```
-
-O Assistente roda dentro do mesmo processo da `api`, chamando a API da Anthropic com tool use sobre as mesmas `services` usadas pelos endpoints REST.
-
-## Estrutura do repositório
-
-```
-TestUEX/
-├── spec/                         # fonte da verdade — Spec-Driven Development
-│   ├── product.md                # visão de produto, usuários, escopo
-│   ├── architecture.md           # componentes, diagramas, decisões de tecnologia, riscos
-│   ├── api.md                    # contrato de todos os endpoints REST
-│   ├── data-model.md             # entidades e relacionamentos
-│   ├── tools.md                  # ferramentas do assistente (extensão)
-│   ├── prompts.md                # system prompt do assistente + registro de uso de IA
-│   ├── tasks.md                  # backlog sequenciado (3 dias)
-│   └── decisions/                # ADRs (auth, tags, assistente in-process, kanban sem drag-and-drop)
-├── api/                           # backend FastAPI — ainda não implementado
-├── web/                           # frontend Next.js — ainda não implementado
-├── docker-compose.yml             # planejado — ver spec/tasks.md (T01/T02)
-├── CLAUDE.md                      # convenções e stack para agentes/assistentes de IA neste projeto
-└── UEX Teste Técnico Vaga Dev Fullstack.md   # enunciado original do case
-```
-
-## Como rodar (planejado)
-
-Ainda não aplicável — `api/` e `web/` não existem neste repositório. Quando implementado (ver `spec/tasks.md`, Setup & Infra), o fluxo será:
+Pré-requisitos: **Docker + Docker Compose** e **Node.js 20+**.
 
 ```bash
-# Backend + banco
-docker-compose up
+# 1. Backend + banco — sobe Postgres 16 e a API em http://localhost:8000
+#    (migrations Alembic aplicadas automaticamente no startup)
+docker compose up -d
 
-# Frontend (fora do compose em dev)
+# 2. Frontend — http://localhost:3000
 cd web
 npm install
 npm run dev
 ```
 
-Pré-requisitos previstos: Docker, Docker Compose, Node.js 18+, uma chave de API da Anthropic (`ANTHROPIC_API_KEY`) para a extensão do assistente.
+Pronto: abra `http://localhost:3000`, crie uma conta e use. Não é preciso criar `.env` — todos os defaults de desenvolvimento funcionam de primeira (ver tabela abaixo para customizar).
+
+A documentação interativa da API (OpenAPI/Swagger) fica em `http://localhost:8000/docs`, e um smoke check de infra em `http://localhost:8000/health`.
+
+### Rodando os testes
+
+Os testes de backend rodam contra um **Postgres real** (nunca SQLite — o comportamento de `text[]` e constraints importa), num banco dedicado `taskly_test` criado automaticamente no mesmo Postgres do compose:
+
+```bash
+docker compose up -d postgres     # basta o banco
+cd api
+pip install -r requirements-dev.txt
+python -m pytest
+```
+
+Frontend: `cd web && npx tsc --noEmit && npm run lint`.
+
+## Variáveis de ambiente
+
+### API (`api/app/config.py` — pydantic-settings, aceita `.env`)
+
+| Variável | Default | Descrição |
+|---|---|---|
+| `DATABASE_URL` | — (definida no compose) | URL asyncpg do Postgres |
+| `JWT_SECRET` | — (definida no compose) | Segredo de assinatura do JWT — **trocar fora de dev** |
+| `JWT_EXPIRES_DAYS` | `7` | Validade da sessão (sem refresh token — `ADR-001`) |
+| `COOKIE_SECURE` | `false` | `true` em produção (cookie só via HTTPS) |
+| `COOKIE_SAMESITE` | `lax` | `none` se web e api em domínios diferentes |
+| `CORS_ORIGINS` | `["http://localhost:3000"]` | Origens permitidas (com credenciais — nunca `*`) |
+| `UPLOAD_DIR` | `uploads` | Diretório dos anexos (volume Docker nomeado no compose) |
+| `MAX_UPLOAD_BYTES` | `10485760` (10MB) | Limite por arquivo de anexo |
+| `ALLOWED_UPLOAD_TYPES` | imagens, PDF, DOC/DOCX, TXT | MIME types aceitos no upload |
+| `ANTHROPIC_API_KEY` | `""` | Extensão do assistente (T42+) — vazio desabilita o chat |
+
+### Web
+
+| Variável | Default | Descrição |
+|---|---|---|
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8000/api/v1` | Base URL da API |
+
+## Stack e decisões
+
+| Camada | Tecnologia | Por quê |
+|---|---|---|
+| Backend | Python + FastAPI, SQLAlchemy 2.0 async + Alembic | Async nativo, validação Pydantic, OpenAPI automático; migrations versionadas |
+| Banco | PostgreSQL 16 (Docker) | Requisito da vaga; `text[]` nativo para tags (`ADR-002`) |
+| Frontend | Next.js (App Router, TypeScript), Tailwind CSS 4, TanStack Query | Velocidade de construção de UI própria dentro do prazo; cache/estado de servidor prontos |
+| Autenticação | JWT em cookie `httpOnly` + bcrypt | Sessão persistente sem expor token a XSS via `localStorage` (`ADR-001`) |
+| Testes | pytest + pytest-asyncio + httpx `ASGITransport` | Endpoints reais contra Postgres real, sem mockar o banco |
+| Assistente (extensão) | API Anthropic Claude (tool use), in-process | Sem servidor MCP externo por enquanto (`ADR-003`) |
+
+Decisões registradas como ADRs em [`spec/decisions/`](./spec/decisions): autenticação (001), armazenamento de tags (002), assistente in-process (003), kanban **sem drag-and-drop** — mudança de status por controle explícito no card (004).
+
+**Explicitamente fora da stack:** MongoDB e Redis (decisão de escopo para caber no prazo de 3 dias).
+
+## Arquitetura
+
+```
+Browser → web (Next.js) → api (FastAPI: routers → services → repositories → models) → PostgreSQL
+                                                                                       ↳ uploads/ (anexos, volume Docker)
+```
+
+- **Camadas estritas** no backend: `api` (routers) → `services` (regra de negócio) → `repositories` (dados) → `models` — nunca pulando camada; exceções de domínio convertidas em HTTP só na borda
+- **Escopo por usuário em profundidade**: toda query de projeto/tarefa/anexo filtra pelo dono; recurso de outro usuário retorna `404` (não `403`, para não vazar existência)
+- **Frontend**: lista/kanban são a mesma coleção re-renderizada client-side; mudança de status é otimista com rollback; sessão validada por `GET /auth/me` com redirect automático em qualquer `401`
+
+Diagramas completos (Mermaid) em [`spec/architecture.md`](./spec/architecture.md).
+
+## Estrutura do repositório
+
+```
+TestUEX/
+├── spec/                    # fonte da verdade — Spec-Driven Development
+│   ├── product.md           # visão de produto, usuários, escopo
+│   ├── architecture.md      # componentes, diagramas, decisões, riscos
+│   ├── api.md               # contrato de todos os endpoints REST
+│   ├── data-model.md        # entidades e relacionamentos
+│   ├── tools.md             # ferramentas do assistente (extensão)
+│   ├── prompts.md           # system prompt do assistente + registro de uso de IA
+│   ├── tasks.md             # backlog sequenciado (T01–T53)
+│   └── decisions/           # ADR-001 a ADR-004
+├── api/                     # backend FastAPI (routers/services/repositories/models)
+│   ├── alembic/             # migrations versionadas
+│   └── tests/               # suíte pytest contra Postgres real
+├── web/                     # frontend Next.js (App Router)
+│   ├── app/                 # rotas: (auth)/login|register · (app)/projects/[projectId]
+│   ├── components/ui/       # primitivas (dialog nativo, menu, toast, chips…)
+│   └── lib/                 # api-client, tipos, query keys
+├── ux-spec-*.md             # especificações de UX (navegação/identidade e interações)
+├── docker-compose.yml       # api + postgres (web roda via npm run dev em dev)
+└── CLAUDE.md                # convenções para agentes de IA neste projeto
+```
 
 ## Documentação técnica
 
-- [`spec/product.md`](./spec/product.md) — visão de produto, usuários, capacidades, fora de escopo, suposições
-- [`spec/architecture.md`](./spec/architecture.md) — componentes, diagramas Mermaid, fluxo de dados, decisões de tecnologia, riscos
+- [`spec/product.md`](./spec/product.md) — visão de produto, usuários, capacidades, fora de escopo
+- [`spec/architecture.md`](./spec/architecture.md) — componentes, fluxo de dados, decisões, riscos
 - [`spec/api.md`](./spec/api.md) — contrato completo de endpoints REST
 - [`spec/data-model.md`](./spec/data-model.md) — entidades e relacionamentos
-- [`spec/tools.md`](./spec/tools.md) / [`spec/prompts.md`](./spec/prompts.md) — ferramentas e system prompt do assistente
-- [`spec/tasks.md`](./spec/tasks.md) — backlog sequenciado dentro do prazo de 3 dias
-- [`spec/decisions/`](./spec/decisions) — ADRs: estratégia de autenticação (001), armazenamento de tags (002), assistente in-process (003), kanban sem drag-and-drop (004)
+- [`ux-spec-navigation-and-identity.md`](./ux-spec-navigation-and-identity.md) / [`ux-spec-task-views-and-form.md`](./ux-spec-task-views-and-form.md) — fluxos, wireframes, identidade visual e interações
+- [`spec/tasks.md`](./spec/tasks.md) — backlog sequenciado com dependências e critérios de aceite
 
 ## Uso de IA no desenvolvimento
 
-Este projeto foi planejado inteiramente com apoio de agentes de IA especializados (arquiteto, gerente de projeto, desenvolvedor, revisor, etc.), seguindo o pipeline documentado em `CLAUDE.md`. O registro rastreável de prompts relevantes e revisões está em [`spec/prompts.md`](./spec/prompts.md) e será atualizado incrementalmente durante a implementação — não reconstituído no final.
+O projeto inteiro — specs, código, testes, revisões — foi desenvolvido com **Claude Code** sobre um pipeline de agentes especializados (arquiteto, UX, desenvolvedor, test engineer, revisor), em Spec-Driven Development: as specs foram geradas e revisadas **antes** do código, e cada commit referencia a task do backlog que implementa.
+
+O registro rastreável — ferramentas, prompts relevantes por fase e **onde o output da IA foi revisado/corrigido por humano ou por revisão adversária** — está em [`spec/prompts.md`](./spec/prompts.md).
 
 ## Entregáveis do case
 
 - [x] Repositório público no GitHub
-- [x] Spec técnica (`spec/`)
-- [ ] README completo *(este arquivo — será atualizado conforme a implementação avança)*
-- [ ] Registro de prompts de IA consolidado
-- [ ] Implementação (`api/`, `web/`)
-- [ ] Testes automatizados
-- [ ] Vídeo de arquitetura e demonstração
-- [ ] Link de deploy *(opcional — só se sobrar tempo, ver `spec/product.md`)*
+- [x] Spec técnica (`spec/` + UX specs)
+- [x] README com setup local-first
+- [x] Registro de prompts de IA consolidado (`spec/prompts.md`)
+- [x] Implementação do escopo mínimo (`api/`, `web/`)
+- [x] Testes automatizados
+- [ ] CI (GitHub Actions) — T38
+- [ ] Vídeo de arquitetura e demonstração — T41
+- [ ] Extensão: tela "Assistente" — T42–T50 (após vídeo)
+- [ ] Link de deploy *(opcional)*
