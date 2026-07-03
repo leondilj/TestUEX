@@ -117,7 +117,7 @@ Step 1: usuário clica em um card/linha
   - Título do drawer = título da tarefa; rodapé: botão primário **"Salvar"** (desabilitado até haver mudança) + botão de texto **"Excluir tarefa"** (danger, alinhado à esquerda)
 
 Step 2: usuário edita qualquer campo e clica em "Salvar"
-  - System response: `PATCH /tasks/{id}` com **apenas os campos alterados** → 200: botão mostra estado "Salvo ✓" por 2s e volta a desabilitar; card ao fundo atualiza. Erros 400 → mensagem inline no campo correspondente (copy do backend traduzida: título vazio → "Informe um título."; status inválido não é alcançável pela UI)
+  - System response: `PATCH /tasks/{id}` com **apenas os campos alterados** → 200: o drawer **fecha**; o card ao fundo atualiza; live region: *"Tarefa salva"* (revisão de 2026-07-02, decisão do usuário — substituiu o estado "Salvo ✓" com drawer aberto). Erros 400 → mensagem inline no campo correspondente (copy do backend traduzida: título vazio → "Informe um título."; status inválido não é alcançável pela UI)
   - Modelo de salvamento: **submit explícito**, não autosave por campo — decisão para caber no prazo e evitar estados intermediários confusos; a exceção é o controle de status no card (seção 2), que continua imediato
 
 Step 3 (excluir): "Excluir tarefa" → confirmação: título "Excluir tarefa?", texto **"\"<título>\" e seus anexos serão excluídos permanentemente."**, botões "Cancelar" (padrão) / "Excluir" (danger) → `DELETE /tasks/{id}` → drawer fecha, card some, live region: *"Tarefa excluída"*

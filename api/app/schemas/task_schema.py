@@ -6,6 +6,8 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
+from app.schemas.attachment_schema import AttachmentResponse
+
 
 class TaskStatus(str, Enum):
     not_started = "not_started"
@@ -54,8 +56,9 @@ class TaskSummaryResponse(BaseModel):
 
 
 class TaskDetailResponse(TaskSummaryResponse):
-    """Detalhe completo — anexos entram no contrato em T24."""
+    """Detalhe completo — inclui anexos (spec/api.md, GET /tasks/{id})."""
 
     project_id: uuid.UUID
     full_description: str | None
     updated_at: datetime
+    attachments: list[AttachmentResponse] = []

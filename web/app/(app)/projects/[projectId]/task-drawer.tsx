@@ -25,6 +25,8 @@ import {
   type TaskUpdateInput,
 } from "@/lib/types";
 
+import { AttachmentsSection } from "./attachments-section";
+
 // Copy dos erros conforme T26/T27 — não parafrasear
 const SAVE_ERROR = "Não foi possível salvar. Tente novamente.";
 const DELETE_ERROR = "Não foi possível excluir. Tente novamente.";
@@ -33,7 +35,6 @@ const TITLE_REQUIRED = "Informe um título.";
 const SHORT_DESCRIPTION_MAX = 280;
 const COUNTER_VISIBLE_FROM = 200;
 const COUNTER_LIVE_FROM = 260;
-const SAVED_FLASH_MS = 2000;
 
 export type TaskDrawerState =
   | { kind: "create" }
@@ -134,7 +135,6 @@ export function TaskDrawer({
   const [titleError, setTitleError] = useState<string | null>(null);
   const [confirmingDiscard, setConfirmingDiscard] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [savedFlash, setSavedFlash] = useState(false);
   // id da tarefa cujos dados já popularam o formulário (evita reset em refetch)
   const [formLoadedId, setFormLoadedId] = useState<string | null>(null);
 
@@ -163,7 +163,6 @@ export function TaskDrawer({
     if (open) {
       setConfirmingDiscard(false);
       setConfirmingDelete(false);
-      setSavedFlash(false);
       setFormLoadedId(null);
       if (state.kind === "create") resetForm(EMPTY_FORM);
     }
@@ -207,11 +206,14 @@ export function TaskDrawer({
 
   const save = useMutation({
     mutationFn: (patch: TaskUpdateInput) => api.tasks.update(taskId!, patch),
+    // salvar fecha o drawer (decisão do usuário em 2026-07-02, revisando a
+    // UX spec §3 — o feedback é o card atualizado ao fundo + live region)
     onSuccess: (task) => {
       queryClient.setQueryData(taskKeys.detail(task.id), task);
       queryClient.invalidateQueries({ queryKey: projectKeys.tasks(projectId) });
       resetForm(fromTask(task));
-      setSavedFlash(true);
+      announce("Tarefa salva");
+      onClose();
     },
     onError: (error) => {
       if (error instanceof ApiError && error.status === 400) {
@@ -233,12 +235,6 @@ export function TaskDrawer({
     },
     onError: () => onError(DELETE_ERROR),
   });
-
-  useEffect(() => {
-    if (!savedFlash) return;
-    const timer = setTimeout(() => setSavedFlash(false), SAVED_FLASH_MS);
-    return () => clearTimeout(timer);
-  }, [savedFlash]);
 
   const shortTooLong = values.shortDescription.length > SHORT_DESCRIPTION_MAX;
 
@@ -443,6 +439,16 @@ export function TaskDrawer({
               tags={values.tags}
               onChange={(tags) => set("tags", tags)}
             />
+
+            {/* anexos só em modo edição — exigem a tarefa criada (T34) */}
+            {state.kind === "edit" && detail.data && (
+              <AttachmentsSection
+                taskId={detail.data.id}
+                attachments={detail.data.attachments}
+                announce={announce}
+                onError={onError}
+              />
+            )}
           </div>
 
           <footer className="border-t border-line px-6 py-4">
@@ -484,12 +490,8 @@ export function TaskDrawer({
                 >
                   Excluir tarefa
                 </Button>
-                <Button
-                  type="submit"
-                  loading={save.isPending}
-                  disabled={savedFlash || !dirty}
-                >
-                  {savedFlash ? "Salvo ✓" : "Salvar"}
+                <Button type="submit" loading={save.isPending} disabled={!dirty}>
+                  Salvar
                 </Button>
               </div>
             )}

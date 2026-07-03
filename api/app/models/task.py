@@ -4,8 +4,9 @@ from datetime import datetime
 
 from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Text, text
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.models.attachment import Attachment
 from app.models.base import Base, TimestampMixin
 
 TASK_STATUSES = ("not_started", "in_progress", "done", "cancelled")
@@ -39,4 +40,15 @@ class Task(Base, TimestampMixin):
     )
     tags: Mapped[list[str]] = mapped_column(
         ARRAY(Text), default=list, server_default=text("'{}'::text[]"), nullable=False
+    )
+
+    # Detalhe da tarefa inclui anexos (spec/api.md — GET /tasks/{id}).
+    # lazy="selectin" evita lazy load em contexto async; delete em cascata
+    # já é garantido pelo FK ondelete="CASCADE" (passive_deletes)
+    attachments: Mapped[list[Attachment]] = relationship(
+        Attachment,
+        order_by=Attachment.created_at,
+        lazy="selectin",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )

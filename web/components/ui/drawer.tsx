@@ -4,6 +4,9 @@ import { useEffect, useRef, type ReactNode } from "react";
 
 // Drawer lateral (~480px, direita — T26 §6) sobre <dialog> nativo:
 // showModal() dá focus trap e restauração de foco ao card de origem.
+// `hidden open:flex` no className: um display:flex incondicional derrota o
+// `dialog:not([open]) { display: none }` nativo e o drawer fechado
+// continuaria visível, engolindo os cliques da tela.
 // Esc e clique no overlay NÃO fecham diretamente: pedem fechamento via
 // onRequestClose — quem decide é o conteúdo (confirmação de descarte, T27 §3).
 interface DrawerProps {
@@ -44,7 +47,7 @@ export function Drawer({
       onClick={(event) => {
         if (event.target === event.currentTarget) onRequestClose();
       }}
-      className="fixed top-0 right-0 m-0 ml-auto flex h-dvh max-h-dvh w-full max-w-[480px] flex-col bg-surface text-ink shadow-[0_8px_24px_rgba(28,27,26,0.08)] backdrop:bg-ink/40"
+      className="fixed top-0 right-0 m-0 ml-auto hidden h-dvh max-h-dvh w-full max-w-[480px] flex-col bg-surface text-ink shadow-[0_8px_24px_rgba(28,27,26,0.08)] backdrop:bg-ink/40 open:flex"
     >
       {children}
     </dialog>

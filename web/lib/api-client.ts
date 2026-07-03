@@ -98,15 +98,31 @@ export const api = {
   attachments: {
     list: (taskId: string) =>
       apiFetch<Attachment[]>(`/tasks/${taskId}/attachments`),
-    // multipart: sem Content-Type manual — o browser define o boundary
-    upload: (taskId: string, file: File) => {
-      const form = new FormData();
-      form.append("file", file);
-      return apiFetch<Attachment>(`/tasks/${taskId}/attachments`, {
-        method: "POST",
-        body: form,
-      });
-    },
+    // multipart: sem Content-Type manual — o browser define o boundary.
+    // XHR em vez de fetch: é a única API com evento de progresso de upload
+    // (a UX de anexos exige barra por arquivo — T27 §4).
+    upload: (taskId: string, file: File, onProgress?: (fraction: number) => void) =>
+      new Promise<Attachment>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `${BASE_URL}/tasks/${taskId}/attachments`);
+        xhr.withCredentials = true;
+        xhr.responseType = "json";
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) onProgress?.(event.loaded / event.total);
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(xhr.response as Attachment);
+          } else {
+            reject(new ApiError(xhr.status, xhr.response?.detail ?? null));
+          }
+        };
+        // falha de rede: status 0 nunca colide com um HTTP real
+        xhr.onerror = () => reject(new ApiError(0, null));
+        const form = new FormData();
+        form.append("file", file);
+        xhr.send(form);
+      }),
     remove: (attachmentId: string) =>
       apiFetch<void>(`/attachments/${attachmentId}`, { method: "DELETE" }),
     // URL absoluta de download — usada em <a href> e thumbnails <img>
