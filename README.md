@@ -32,6 +32,8 @@ npm run dev
 
 Pronto: abra `http://localhost:3000`, crie uma conta e use. Não é preciso criar `.env` — todos os defaults de desenvolvimento funcionam de primeira (ver tabela abaixo para customizar).
 
+Para habilitar a extensão do assistente (opcional, além do escopo mínimo), crie um `.env` **na raiz do projeto** (mesmo nível do `docker-compose.yml`) com `ANTHROPIC_API_KEY=sk-ant-...` — o Compose lê esse arquivo automaticamente para preencher a variável do container `api`. Sem ele, `docker compose up` sobe normalmente com o chat desabilitado. Rodando a API fora do Docker (ex: testes), a mesma variável vai em `api/.env` (lido pelo pydantic-settings).
+
 A documentação interativa da API (OpenAPI/Swagger) fica em `http://localhost:8000/docs`, e um smoke check de infra em `http://localhost:8000/health`.
 
 ### Rodando os testes
@@ -63,6 +65,7 @@ Frontend: `cd web && npx tsc --noEmit && npm run lint`.
 | `MAX_UPLOAD_BYTES` | `10485760` (10MB) | Limite por arquivo de anexo |
 | `ALLOWED_UPLOAD_TYPES` | imagens, PDF, DOC/DOCX, TXT | MIME types aceitos no upload |
 | `ANTHROPIC_API_KEY` | `""` | Extensão do assistente (T42+) — vazio desabilita o chat |
+| `ASSISTANT_MODEL` | `claude-haiku-4-5-20251001` | Modelo usado pelo assistente — leve/rápido, as tools não exigem raciocínio complexo (`ADR-003`) |
 
 ### Web
 

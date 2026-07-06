@@ -6,8 +6,14 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql+asyncpg://taskly:taskly@postgres:5432/taskly
-      JWT_SECRET: dev-secret-change-me
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://taskly:taskly@postgres:5432/taskly}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      # Extensão — assistente (ADR-003). Compose lê `${ANTHROPIC_API_KEY}` de um
+      # .env na raiz do projeto (convenção do próprio Docker Compose) ou do
+      # ambiente do shell; `:-` evita erro em clone novo sem a variável definida
+      # — vazio só desabilita o endpoint de chat, resto do app sobe normal.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ASSISTANT_MODEL: ${ASSISTANT_MODEL:-claude-haiku-4-5-20251001}
     volumes:
       - uploads_data:/app/uploads
     depends_on:
