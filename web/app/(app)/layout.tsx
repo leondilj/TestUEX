@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -18,8 +18,10 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const queryClient = useQueryClient();
   const { data: user, isPending, isError } = useSession();
+  const onAssistant = pathname?.startsWith("/assistant") ?? false;
 
   useEffect(() => {
     if (isPending || user) return;
@@ -72,6 +74,34 @@ export default function AppLayout({
             <Logo />
           </Link>
           <div className="flex items-center gap-4">
+            <Link
+              href="/assistant"
+              aria-current={onAssistant ? "page" : undefined}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-all ${
+                onAssistant
+                  ? "border-accent bg-accent text-white shadow-[0_2px_10px_rgba(15,118,110,0.35)]"
+                  : "border-line bg-paper text-ink-muted hover:border-accent hover:text-accent hover:shadow-[0_2px_10px_rgba(15,118,110,0.15)]"
+              }`}
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M12 3a9 9 0 0 0-9 9c0 1.53.4 2.97 1.09 4.21L3 21l4.94-1.06A8.96 8.96 0 0 0 12 21a9 9 0 0 0 0-18Z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinejoin="round"
+                />
+                <circle cx="8.5" cy="12" r="1.1" fill="currentColor" stroke="none" />
+                <circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none" />
+                <circle cx="15.5" cy="12" r="1.1" fill="currentColor" stroke="none" />
+              </svg>
+              Assistente
+            </Link>
             <span className="hidden text-sm text-ink-muted sm:inline">
               {user.email}
             </span>
