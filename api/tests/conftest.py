@@ -97,6 +97,14 @@ async def user_id(db_session) -> uuid.UUID:
 
 
 @pytest.fixture
+async def other_user_id(db_session) -> uuid.UUID:
+    """Segundo usuário real persistido (via AuthService, não HTTP) — testes cross-user."""
+    auth_service = AuthService(UserRepository(db_session))
+    user = await auth_service.register(**OTHER_USER)
+    return user.id
+
+
+@pytest.fixture
 async def other_auth_client(db_schema):
     """Segundo usuário logado, com cookie jar próprio — para testes cross-user (404)."""
     transport = httpx.ASGITransport(app=app)
