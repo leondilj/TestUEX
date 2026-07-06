@@ -32,6 +32,8 @@ class Settings(BaseSettings):
 
     # Extensão — assistente (ADR-003); vazio desabilita o endpoint de chat
     anthropic_api_key: str = ""
+    # Modelo leve/rápido: tools são simples, não exigem raciocínio complexo (ADR-003 — Risks)
+    assistant_model: str = "claude-haiku-4-5-20251001"
 
 
 @lru_cache

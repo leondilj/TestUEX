@@ -10,6 +10,7 @@ from app.api.v1 import api_router
 from app.config import get_settings
 from app.database import engine
 from app.exceptions.domain_exceptions import (
+    AssistantError,
     ConflictError,
     DomainError,
     InvalidCredentialsError,
@@ -51,6 +52,7 @@ app.add_exception_handler(RequestValidationError, _validation_handler)
 app.add_exception_handler(NotFoundError, _domain_handler(404))
 app.add_exception_handler(ConflictError, _domain_handler(409))
 app.add_exception_handler(InvalidCredentialsError, _domain_handler(401))
+app.add_exception_handler(AssistantError, _domain_handler(502))
 app.add_exception_handler(DomainError, _domain_handler(400))
 
 

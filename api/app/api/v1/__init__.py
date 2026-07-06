@@ -5,6 +5,7 @@ attachments (T24), assistant (T46).
 """
 from fastapi import APIRouter
 
+from app.api.v1.assistant_router import router as assistant_router
 from app.api.v1.attachments_router import router as attachments_router
 from app.api.v1.auth_router import router as auth_router
 from app.api.v1.projects_router import router as projects_router
@@ -15,3 +16,4 @@ api_router.include_router(auth_router)
 api_router.include_router(projects_router)
 api_router.include_router(tasks_router)
 api_router.include_router(attachments_router)
+api_router.include_router(assistant_router)

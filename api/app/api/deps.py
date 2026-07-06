@@ -7,10 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import async_session_maker
 from app.exceptions.domain_exceptions import InvalidCredentialsError
 from app.models.user import User
+from app.repositories.assistant_conversation_repository import (
+    AssistantConversationRepository,
+)
 from app.repositories.attachment_repository import AttachmentRepository
 from app.repositories.project_repository import ProjectRepository
 from app.repositories.task_repository import TaskRepository
 from app.repositories.user_repository import UserRepository
+from app.services.assistant_service import AssistantService
 from app.services.attachment_service import AttachmentService
 from app.services.auth_service import AuthService
 from app.services.project_service import ProjectService
@@ -40,6 +44,14 @@ def get_task_service(db: AsyncSession = Depends(get_db)) -> TaskService:
 
 def get_attachment_service(db: AsyncSession = Depends(get_db)) -> AttachmentService:
     return AttachmentService(AttachmentRepository(db), TaskRepository(db))
+
+
+def get_assistant_service(db: AsyncSession = Depends(get_db)) -> AssistantService:
+    return AssistantService(
+        AssistantConversationRepository(db),
+        ProjectService(ProjectRepository(db)),
+        TaskService(TaskRepository(db), ProjectRepository(db)),
+    )
 
 
 async def get_current_user(

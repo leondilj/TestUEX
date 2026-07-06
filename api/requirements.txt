@@ -10,3 +10,6 @@ passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
 pyjwt==2.10.1
 python-multipart==0.0.20
+
+# Extensão — assistente (ADR-003)
+anthropic==0.40.0

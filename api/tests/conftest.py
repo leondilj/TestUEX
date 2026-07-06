@@ -15,14 +15,19 @@ os.environ.setdefault("JWT_SECRET", "test-secret")
 # Uploads de teste em diretório temporário — nunca no uploads/ real
 os.environ["UPLOAD_DIR"] = tempfile.mkdtemp(prefix="taskly_test_uploads_")
 
+import uuid
+
 import httpx
 import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
+from app.database import async_session_maker
 from app.database import engine as app_engine
 from app.main import app
 from app.models.base import Base
+from app.repositories.user_repository import UserRepository
+from app.services.auth_service import AuthService
 
 TEST_USER = {"email": "tester@example.com", "password": "senha-forte-123"}
 OTHER_USER = {"email": "other@example.com", "password": "senha-forte-456"}
@@ -74,6 +79,21 @@ async def auth_client(client):
     resp = await client.post("/api/v1/auth/login", json=TEST_USER)
     assert resp.status_code == 200, resp.text
     return client
+
+
+@pytest.fixture
+async def db_session(db_schema):
+    """Sessão async crua — para testar tools/services isolados, sem passar por HTTP."""
+    async with async_session_maker() as session:
+        yield session
+
+
+@pytest.fixture
+async def user_id(db_session) -> uuid.UUID:
+    """Usuário real persistido (via AuthService, não HTTP) — dono dos fixtures de tool."""
+    auth_service = AuthService(UserRepository(db_session))
+    user = await auth_service.register(**TEST_USER)
+    return user.id
 
 
 @pytest.fixture

@@ -20,3 +20,8 @@ class ConflictError(DomainError):
 
 class InvalidCredentialsError(DomainError):
     """Credenciais ou sessão inválidas — vira HTTP 401."""
+
+
+class AssistantError(DomainError):
+    """Falha ao orquestrar o assistente — API da Anthropic indisponível ou loop de
+    tool use excedido (ADR-003). Vira HTTP 502, não 400 (handler próprio em main.py)."""
