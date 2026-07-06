@@ -2,6 +2,7 @@
 import uuid
 from datetime import datetime
 
+from app.assistant.tools._ids import parse_uuid
 from app.exceptions.domain_exceptions import DomainError
 from app.services.task_service import TaskService
 
@@ -19,9 +20,8 @@ async def create_task(
     """Retorna um dict com `error` (nunca levanta exceção) quando o input do
     modelo é inválido ou o projeto não é encontrado — `project_id` nunca deve
     ser inventado pelo modelo (deve vir de um list_projects prévio, spec/tools.md)."""
-    try:
-        project_uuid = uuid.UUID(project_id)
-    except ValueError:
+    project_uuid = parse_uuid(project_id)
+    if project_uuid is None:
         return {"error": f"project_id inválido: {project_id}"}
 
     parsed_due_date: datetime | None = None

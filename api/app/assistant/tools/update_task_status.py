@@ -1,6 +1,7 @@
 """Tool update_task_status — spec/tools.md. Chama task_service, nunca o repository direto."""
 import uuid
 
+from app.assistant.tools._ids import parse_uuid
 from app.exceptions.domain_exceptions import DomainError
 from app.schemas.task_schema import TaskStatus
 from app.services.task_service import TaskService
@@ -12,9 +13,8 @@ async def update_task_status(
     """Retorna um dict com `error` (nunca levanta exceção) quando o input do
     modelo é inválido ou a tarefa não é encontrada — `task_id` nunca deve ser
     inventado pelo modelo (deve vir de um list_tasks prévio, spec/tools.md)."""
-    try:
-        task_uuid = uuid.UUID(task_id)
-    except ValueError:
+    task_uuid = parse_uuid(task_id)
+    if task_uuid is None:
         return {"error": f"task_id inválido: {task_id}"}
 
     try:

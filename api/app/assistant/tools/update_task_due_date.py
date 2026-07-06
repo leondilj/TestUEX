@@ -2,6 +2,7 @@
 import uuid
 from datetime import datetime
 
+from app.assistant.tools._ids import parse_uuid
 from app.exceptions.domain_exceptions import DomainError
 from app.services.task_service import TaskService
 
@@ -13,9 +14,8 @@ async def update_task_due_date(
     modelo é inválido, a tarefa não é encontrada ou o prazo ultrapassa a janela
     de 30 dias a partir de amanhã — `task_id` nunca deve ser inventado pelo
     modelo (deve vir de um list_tasks prévio, spec/tools.md)."""
-    try:
-        task_uuid = uuid.UUID(task_id)
-    except ValueError:
+    task_uuid = parse_uuid(task_id)
+    if task_uuid is None:
         return {"error": f"task_id inválido: {task_id}"}
 
     try:

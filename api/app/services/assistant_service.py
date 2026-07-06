@@ -1,4 +1,4 @@
-"""Orquestra Claude (tool use) + histórico persistido + as 4 tools — ver ADR-003.
+"""Orquestra Claude (tool use) + histórico persistido + as tools do assistente — ver ADR-003.
 
 Loop: chama a API da Anthropic, executa a tool pedida via app/assistant/tools/,
 devolve o resultado ao modelo, repete até haver resposta final em texto ou até

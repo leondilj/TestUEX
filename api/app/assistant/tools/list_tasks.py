@@ -1,6 +1,7 @@
 """Tool list_tasks — spec/tools.md. Chama task_service, nunca o repository direto."""
 import uuid
 
+from app.assistant.tools._ids import parse_uuid
 from app.exceptions.domain_exceptions import DomainError
 from app.schemas.task_schema import TaskStatus
 from app.services.task_service import TaskService
@@ -16,9 +17,8 @@ async def list_tasks(
     """Retorna um dict com `error` (nunca levanta exceção) quando o input do
     modelo é inválido ou o projeto não é encontrado — spec/prompts.md exige
     reportar isso ao usuário sem inventar alternativas."""
-    try:
-        project_uuid = uuid.UUID(project_id)
-    except ValueError:
+    project_uuid = parse_uuid(project_id)
+    if project_uuid is None:
         return {"error": f"project_id inválido: {project_id}"}
 
     if status is not None:

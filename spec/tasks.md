@@ -127,7 +127,23 @@ Then apenas as tarefas "not_started" são retornadas
 - [x] T47 Testes das 4 tools isoladas (sem chamar a API da Anthropic de verdade — mockar só a camada do SDK, nunca o `service`) — Priority: P3 | Agent: python-test-engineer | Depends on: T44
 - [x] T48 Testes do `assistant_service` (resolução de IDs, limite de iterações, anti-alucinação conforme regras de `spec/prompts.md`) — Priority: P3 | Agent: python-test-engineer | Depends on: T45
 - [x] T49 Tela "Assistente" (chat) no `web`, exibindo `tool_calls` de forma transparente — Priority: P3 | Agent: frontend-engineer | Depends on: T46, T26
-- [ ] T50 Revisão final do assistente (prompt anti-alucinação, isolamento das tools, cobertura de teste) — Priority: P3 | Agent: code-reviewer | Depends on: T47, T48, T49
+- [x] T54 Implementar 5ª tool `update_task_due_date` (assistente pode alterar o prazo de uma tarefa existente) — `TaskService.update_task_due_date` recusa prazo superior a 30 dias a partir de amanhã (`DomainError`, nunca exceção crua); `spec/prompts.md`/`spec/tools.md` atualizados com a nova capacidade e o limite — Priority: P3 | Agent: ai-engineer | Depends on: T44, T45
+- [x] T50 Revisão final do assistente (prompt anti-alucinação, isolamento das tools, cobertura de teste) — Priority: P3 | Agent: code-reviewer | Depends on: T47, T48, T49, T54
+
+**Acceptance criteria (T54):**
+```
+Given uma tarefa existente e um prazo até 30 dias a partir de amanhã (inclusive)
+When o assistente chama update_task_due_date(task_id, due_date)
+Then o prazo da tarefa é atualizado e a tool retorna id/title/due_date
+
+Given uma tarefa existente e um prazo superior a 30 dias a partir de amanhã
+When o assistente chama update_task_due_date(task_id, due_date)
+Then a tool retorna { "error": ... } sem alterar o prazo da tarefa
+
+Given um task_id inexistente ou de outro usuário
+When o assistente chama update_task_due_date(task_id, due_date)
+Then a tool retorna { "error": ... } (nunca um dado de outro usuário)
+```
 
 ---
 

@@ -15,10 +15,11 @@ from app.assistant.tools.list_projects import list_projects
 from app.assistant.tools.list_tasks import list_tasks
 from app.assistant.tools.update_task_due_date import update_task_due_date
 from app.assistant.tools.update_task_status import update_task_status
+from app.exceptions.domain_exceptions import DomainError
 from app.repositories.project_repository import ProjectRepository
 from app.repositories.task_repository import TaskRepository
 from app.services.project_service import ProjectService
-from app.services.task_service import TaskService
+from app.services.task_service import TaskService, _max_assistant_due_date
 
 
 @pytest.fixture
@@ -232,3 +233,33 @@ async def test_update_task_due_date_beyond_30_days_from_tomorrow_returns_error(
         task_service, user_id, task_id=created["id"], due_date=too_far.isoformat()
     )
     assert "error" in result
+
+
+async def test_update_task_due_date_exactly_at_30_day_boundary_is_allowed(
+    task_service, user_id, project_id
+):
+    """Chama o service diretamente (não a tool) com `now` fixo — a tool nunca
+    expõe `now`, mas o service aceita para testar a fronteira sem depender do
+    relógio real (deterministic, ver code review de T50)."""
+    created = await create_task(task_service, user_id, project_id=project_id, title="X")
+    now = datetime(2026, 7, 6, 12, 0, tzinfo=timezone.utc)
+    boundary = _max_assistant_due_date(now)
+
+    task = await task_service.update_task_due_date(
+        uuid.UUID(created["id"]), user_id, boundary, now=now
+    )
+
+    assert task.due_date == boundary
+
+
+async def test_update_task_due_date_one_microsecond_past_boundary_is_rejected(
+    task_service, user_id, project_id
+):
+    created = await create_task(task_service, user_id, project_id=project_id, title="X")
+    now = datetime(2026, 7, 6, 12, 0, tzinfo=timezone.utc)
+    past_boundary = _max_assistant_due_date(now) + timedelta(microseconds=1)
+
+    with pytest.raises(DomainError):
+        await task_service.update_task_due_date(
+            uuid.UUID(created["id"]), user_id, past_boundary, now=now
+        )

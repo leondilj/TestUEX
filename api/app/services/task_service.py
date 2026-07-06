@@ -88,15 +88,22 @@ class TaskService:
         await self._tasks.delete(task)
 
     async def update_task_due_date(
-        self, task_id: uuid.UUID, user_id: uuid.UUID, due_date: datetime
+        self,
+        task_id: uuid.UUID,
+        user_id: uuid.UUID,
+        due_date: datetime,
+        now: datetime | None = None,
     ) -> Task:
         """Usada pela tool update_task_due_date do assistente (spec/tools.md) —
         limita o prazo a no máximo 30 dias a partir de amanhã. Restrição exclusiva
-        desta operação: o PATCH normal de tarefa (`update_task`) não a aplica."""
+        desta operação: o PATCH normal de tarefa (`update_task`) não a aplica.
+
+        `now` é injetável só para testar a fronteira dos 30 dias de forma
+        determinística — a tool nunca o informa, sempre usa o relógio real."""
         task = await self.get_task(task_id, user_id)
         if due_date.tzinfo is None:
             due_date = due_date.replace(tzinfo=timezone.utc)
-        max_due_date = _max_assistant_due_date()
+        max_due_date = _max_assistant_due_date(now)
         if due_date > max_due_date:
             raise DomainError(
                 "Prazo não pode ser superior a 30 dias a partir de amanhã "
