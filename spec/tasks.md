@@ -119,12 +119,12 @@ Then apenas as tarefas "not_started" são retornadas
 
 ## Layer: Extensão — Assistente (ADR-003, só após T36–T41)
 
-- [ ] T42 Migration Alembic de `assistant_conversations` + `assistant_messages` (`spec/data-model.md`) — Priority: P3 | Agent: python-developer | Depends on: T41
-- [ ] T43 Implementar `assistant_conversation_repository.py` — Priority: P3 | Agent: python-developer | Depends on: T42
-- [ ] T44 Implementar as 4 tools isoladas em `app/assistant/tools/` (`list_projects`, `list_tasks`, `create_task`, `update_task_status`), cada uma chamando o `service` correspondente — nunca `repository` diretamente (ver `CLAUDE.md` — Convenções) — Priority: P3 | Agent: ai-engineer | Depends on: T15, T20
-- [ ] T45 Implementar `assistant_service.py`: monta system prompt (`spec/prompts.md`) + histórico persistido + tools, chama API Anthropic, loop de tool use limitado a 5 iterações (`ADR-003`), persiste mensagens — Priority: P3 | Agent: ai-engineer | Depends on: T43, T44
-- [ ] T46 Implementar `assistant_router.py`: `POST /assistant/chat` — Priority: P3 | Agent: python-developer | Depends on: T45
-- [ ] T47 Testes das 4 tools isoladas (sem chamar a API da Anthropic de verdade — mockar só a camada do SDK, nunca o `service`) — Priority: P3 | Agent: python-test-engineer | Depends on: T44
+- [x] T42 Migration Alembic de `assistant_conversations` + `assistant_messages` (`spec/data-model.md`) — Priority: P3 | Agent: python-developer | Depends on: T41
+- [x] T43 Implementar `assistant_conversation_repository.py` — Priority: P3 | Agent: python-developer | Depends on: T42
+- [x] T44 Implementar as 4 tools isoladas em `app/assistant/tools/` (`list_projects`, `list_tasks`, `create_task`, `update_task_status`), cada uma chamando o `service` correspondente — nunca `repository` diretamente (ver `CLAUDE.md` — Convenções) — Priority: P3 | Agent: ai-engineer | Depends on: T15, T20
+- [x] T45 Implementar `assistant_service.py`: monta system prompt (`spec/prompts.md`) + histórico persistido + tools, chama API Anthropic, loop de tool use limitado a 5 iterações (`ADR-003`), persiste mensagens — Priority: P3 | Agent: ai-engineer | Depends on: T43, T44
+- [x] T46 Implementar `assistant_router.py`: `POST /assistant/chat` — Priority: P3 | Agent: python-developer | Depends on: T45
+- [x] T47 Testes das 4 tools isoladas (sem chamar a API da Anthropic de verdade — mockar só a camada do SDK, nunca o `service`) — Priority: P3 | Agent: python-test-engineer | Depends on: T44
 - [ ] T48 Testes do `assistant_service` (resolução de IDs, limite de iterações, anti-alucinação conforme regras de `spec/prompts.md`) — Priority: P3 | Agent: python-test-engineer | Depends on: T45
 - [ ] T49 Tela "Assistente" (chat) no `web`, exibindo `tool_calls` de forma transparente — Priority: P3 | Agent: frontend-engineer | Depends on: T46, T26
 - [ ] T50 Revisão final do assistente (prompt anti-alucinação, isolamento das tools, cobertura de teste) — Priority: P3 | Agent: code-reviewer | Depends on: T47, T48, T49
