@@ -1,4 +1,4 @@
-"""Testes das 4 tools do assistente (T47) — spec/tools.md.
+"""Testes das tools do assistente (T47) — spec/tools.md.
 
 Chamadas diretas às funções de app/assistant/tools/, contra o Postgres de teste
 real (via `db_session`/`user_id` de conftest.py) — nunca via HTTP e nunca
@@ -6,12 +6,14 @@ chamando a API da Anthropic de verdade (isso é T48, com o SDK mockado no nível
 do assistant_service).
 """
 import uuid
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
 from app.assistant.tools.create_task import create_task
 from app.assistant.tools.list_projects import list_projects
 from app.assistant.tools.list_tasks import list_tasks
+from app.assistant.tools.update_task_due_date import update_task_due_date
 from app.assistant.tools.update_task_status import update_task_status
 from app.repositories.project_repository import ProjectRepository
 from app.repositories.task_repository import TaskRepository
@@ -169,5 +171,64 @@ async def test_update_task_status_invalid_status_returns_error(
 
     result = await update_task_status(
         task_service, user_id, task_id=created["id"], status="banana"
+    )
+    assert "error" in result
+
+
+# --- update_task_due_date ---
+
+
+async def test_update_task_due_date_success(task_service, user_id, project_id):
+    created = await create_task(task_service, user_id, project_id=project_id, title="X")
+    new_due_date = datetime.now(timezone.utc) + timedelta(days=5)
+
+    result = await update_task_due_date(
+        task_service, user_id, task_id=created["id"], due_date=new_due_date.isoformat()
+    )
+
+    assert result["id"] == created["id"]
+    assert result["title"] == "X"
+    assert result["due_date"] == new_due_date.isoformat()
+
+
+async def test_update_task_due_date_invalid_task_id_returns_error(task_service, user_id):
+    result = await update_task_due_date(
+        task_service,
+        user_id,
+        task_id="not-a-uuid",
+        due_date=datetime.now(timezone.utc).isoformat(),
+    )
+    assert "error" in result
+
+
+async def test_update_task_due_date_unknown_task_returns_error(task_service, user_id):
+    result = await update_task_due_date(
+        task_service,
+        user_id,
+        task_id=str(uuid.uuid4()),
+        due_date=datetime.now(timezone.utc).isoformat(),
+    )
+    assert "error" in result
+
+
+async def test_update_task_due_date_invalid_format_returns_error(
+    task_service, user_id, project_id
+):
+    created = await create_task(task_service, user_id, project_id=project_id, title="X")
+
+    result = await update_task_due_date(
+        task_service, user_id, task_id=created["id"], due_date="sexta-feira"
+    )
+    assert "error" in result
+
+
+async def test_update_task_due_date_beyond_30_days_from_tomorrow_returns_error(
+    task_service, user_id, project_id
+):
+    created = await create_task(task_service, user_id, project_id=project_id, title="X")
+    too_far = datetime.now(timezone.utc) + timedelta(days=40)
+
+    result = await update_task_due_date(
+        task_service, user_id, task_id=created["id"], due_date=too_far.isoformat()
     )
     assert "error" in result

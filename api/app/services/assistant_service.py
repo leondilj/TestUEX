@@ -13,6 +13,7 @@ from app.assistant.system_prompt import SYSTEM_PROMPT
 from app.assistant.tools.create_task import create_task
 from app.assistant.tools.list_projects import list_projects
 from app.assistant.tools.list_tasks import list_tasks
+from app.assistant.tools.update_task_due_date import update_task_due_date
 from app.assistant.tools.update_task_status import update_task_status
 from app.config import get_settings
 from app.exceptions.domain_exceptions import AssistantError, NotFoundError
@@ -85,6 +86,27 @@ ANTHROPIC_TOOLS: list[dict] = [
                 "status": {"type": "string", "enum": list(TASK_STATUSES)},
             },
             "required": ["task_id", "status"],
+        },
+    },
+    {
+        "name": "update_task_due_date",
+        "description": (
+            "Atualiza o prazo de uma tarefa existente. O prazo não pode ser "
+            "superior a 30 dias a partir de amanhã."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "task_id": {
+                    "type": "string",
+                    "description": "UUID da tarefa — nunca inventado, deve vir de list_tasks",
+                },
+                "due_date": {
+                    "type": "string",
+                    "description": "Data/hora em ISO 8601",
+                },
+            },
+            "required": ["task_id", "due_date"],
         },
     },
 ]
@@ -208,6 +230,8 @@ class AssistantService:
             return await create_task(self._task_service, user_id, **tool_input)
         if name == "update_task_status":
             return await update_task_status(self._task_service, user_id, **tool_input)
+        if name == "update_task_due_date":
+            return await update_task_due_date(self._task_service, user_id, **tool_input)
         raise AssistantError(f"Tool desconhecida: {name}")
 
     @staticmethod

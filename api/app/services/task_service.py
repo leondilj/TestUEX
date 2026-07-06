@@ -1,11 +1,24 @@
 """Regra de negócio de tasks — tags normalizadas (ADR-002), escopo por usuário (404)."""
 import uuid
+from datetime import datetime, time, timedelta, timezone
 from typing import Any
 
 from app.exceptions.domain_exceptions import DomainError, NotFoundError
 from app.models.task import Task
 from app.repositories.project_repository import ProjectRepository
 from app.repositories.task_repository import TaskRepository
+
+MAX_DUE_DATE_WINDOW_DAYS = 30
+
+
+def _max_assistant_due_date(now: datetime | None = None) -> datetime:
+    """Limite superior de prazo permitido ao assistente: fim do 30º dia contado
+    a partir de amanhã (dia subsequente a `now`) — restrição própria da tool
+    update_task_due_date, não se aplica ao PATCH normal de tarefa."""
+    reference = (now or datetime.now(timezone.utc)).date()
+    tomorrow = reference + timedelta(days=1)
+    last_allowed_day = tomorrow + timedelta(days=MAX_DUE_DATE_WINDOW_DAYS)
+    return datetime.combine(last_allowed_day, time.max, tzinfo=timezone.utc)
 
 
 def _normalize_tags(tags: list[str]) -> list[str]:
@@ -73,3 +86,20 @@ class TaskService:
     async def delete_task(self, task_id: uuid.UUID, user_id: uuid.UUID) -> None:
         task = await self.get_task(task_id, user_id)
         await self._tasks.delete(task)
+
+    async def update_task_due_date(
+        self, task_id: uuid.UUID, user_id: uuid.UUID, due_date: datetime
+    ) -> Task:
+        """Usada pela tool update_task_due_date do assistente (spec/tools.md) —
+        limita o prazo a no máximo 30 dias a partir de amanhã. Restrição exclusiva
+        desta operação: o PATCH normal de tarefa (`update_task`) não a aplica."""
+        task = await self.get_task(task_id, user_id)
+        if due_date.tzinfo is None:
+            due_date = due_date.replace(tzinfo=timezone.utc)
+        max_due_date = _max_assistant_due_date()
+        if due_date > max_due_date:
+            raise DomainError(
+                "Prazo não pode ser superior a 30 dias a partir de amanhã "
+                f"(máximo permitido: {max_due_date.isoformat()})"
+            )
+        return await self._tasks.update(task, {"due_date": due_date})

@@ -82,6 +82,30 @@ Usuário: "marca a tarefa de revisar contrato como concluída" → assistente re
 
 ---
 
+## Tool: update_task_due_date
+
+**Description:** Atualiza o prazo (`due_date`) de uma tarefa existente. O prazo não pode ser superior a 30 dias a partir de amanhã (dia subsequente ao momento da chamada) — a tool retorna `error` se a data pedida ultrapassar esse limite.
+**Trigger:** o usuário pede para adiar, antecipar ou definir o prazo de uma tarefa já existente (ex: "muda o prazo da tarefa X para sexta").
+
+**Input:**
+- `task_id` (string, required) — nunca inventado; deve vir de um `list_tasks` prévio na mesma conversa
+- `due_date` (string, ISO 8601, required)
+
+**Output:**
+```json
+{ "id": "uuid", "title": "Revisar contrato", "due_date": "2026-07-10T18:00:00Z" }
+```
+
+**Erro (prazo fora da janela permitida):**
+```json
+{ "error": "Prazo não pode ser superior a 30 dias a partir de amanhã (máximo permitido: 2026-08-06T23:59:59+00:00)" }
+```
+
+**Example:**
+Usuário: "muda o prazo da tarefa de revisar contrato para sexta" → assistente resolve `task_id` via `list_tasks`, converte "sexta" para uma data ISO explícita, chama `update_task_due_date(task_id=..., due_date=...)`.
+
+---
+
 ## Regra transversal — resolução de IDs
 
 Nenhuma tool que recebe `project_id` ou `task_id` deve ser chamada com um ID que o modelo não obteve de uma chamada anterior a `list_projects`/`list_tasks` **na mesma conversa**. Se o usuário mencionar um projeto/tarefa por nome (ou por referência posicional/contextual, ex: "a segunda", "aquela que você mostrou") e o assistente ainda não tiver essa lista carregada nesta conversa, a primeira ação deve ser sempre listar antes de agir. Ver `spec/prompts.md` — system prompt completo, seção "Como se comportar".
