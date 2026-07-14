@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     database_url: str
+    db_pool_size: int = 10  # conexões persistentes mantidas abertas no pool, mesmo ociosas
+    db_max_overflow: int = 20  # conexões extras acima do pool_size permitidas em pico de carga
+    db_pool_timeout: int = 30  # segundos que uma requisição espera por conexão livre antes de falhar
     jwt_secret: str
     jwt_expires_days: int = 7  # sem refresh token — ver ADR-001
     cookie_secure: bool = False  # True em produção (ADR-001)
