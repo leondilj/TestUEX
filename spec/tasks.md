@@ -149,9 +149,9 @@ Then a tool retorna { "error": ... } (nunca um dado de outro usuário)
 
 ## Layer: Opcional — Deploy (só se sobrar tempo após T01–T50)
 
-- [ ] T51 Deploy do `web` na Vercel — Priority: P4 | Agent: devops-engineer | Depends on: T39
-- [ ] T52 Deploy da `api` + Postgres (Railway/Render) — atenção a `SameSite=None; Secure` no cookie (`ADR-001`) e a anexos em disco não sobreviverem a filesystem efêmero (`spec/architecture.md` — Risks) — Priority: P4 | Agent: devops-engineer | Depends on: T39
-- [ ] T53 Atualizar README com link de deploy — Priority: P4 | Agent: devops-engineer | Depends on: T51, T52
+- [x] T51 Deploy do `web` na Vercel — Priority: P4 | Agent: devops-engineer | Depends on: T39
+- [x] T52 Deploy da `api` + Postgres (Railway/Render) — atenção a `SameSite=None; Secure` no cookie (`ADR-001`) e a anexos em disco não sobreviverem a filesystem efêmero (`spec/architecture.md` — Risks) — Priority: P4 | Agent: devops-engineer | Depends on: T39
+- [x] T53 Atualizar README com link de deploy — Priority: P4 | Agent: devops-engineer | Depends on: T51, T52
 
 ---
 
