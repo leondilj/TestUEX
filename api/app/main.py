@@ -16,6 +16,9 @@ from app.exceptions.domain_exceptions import (
     InvalidCredentialsError,
     NotFoundError,
 )
+# Import por efeito colateral: registra o cliente Langfuse singleton (ADR-005)
+# antes de qualquer `@observe()` do assistant_service ser executado.
+from app.observability import langfuse_client  # noqa: F401
 
 app = FastAPI(title="Taskly API")
 app.include_router(api_router, prefix="/api/v1")

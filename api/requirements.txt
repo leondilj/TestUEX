@@ -13,3 +13,6 @@ python-multipart==0.0.20
 
 # Extensão — assistente (ADR-003)
 anthropic==0.40.0
+
+# Extensão — observabilidade do assistente via Langfuse self-host (ADR-005)
+langfuse==4.14.0

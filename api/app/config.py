@@ -38,6 +38,14 @@ class Settings(BaseSettings):
     # Modelo leve/rápido: tools são simples, não exigem raciocínio complexo (ADR-003 — Risks)
     assistant_model: str = "claude-haiku-4-5-20251001"
 
+    # Extensão — observabilidade do assistente via Langfuse self-host (ADR-005);
+    # public_key vazio desabilita o tracing automaticamente (client em modo no-op)
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""
+    langfuse_host: str = "http://host.docker.internal:3001"
+    # Usado só como tag de rastreio no Langfuse ("development"/"staging"/"production")
+    app_environment: str = "development"
+
 
 @lru_cache
 def get_settings() -> Settings:

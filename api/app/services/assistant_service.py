@@ -8,6 +8,7 @@ import json
 import uuid
 
 import anthropic
+from langfuse import observe
 
 from app.assistant.system_prompt import SYSTEM_PROMPT
 from app.assistant.tools.create_task import create_task
@@ -19,6 +20,12 @@ from app.config import get_settings
 from app.exceptions.domain_exceptions import AssistantError, NotFoundError
 from app.models.assistant_conversation import AssistantConversation
 from app.models.task import TASK_STATUSES
+from app.observability import (
+    AgentIdentity,
+    langfuse_client,
+    observed_agent_turn,
+    record_turn_outcome,
+)
 from app.repositories.assistant_conversation_repository import (
     AssistantConversationRepository,
 )
@@ -26,6 +33,14 @@ from app.services.project_service import ProjectService
 from app.services.task_service import TaskService
 
 MAX_TOOL_ITERATIONS = 5
+
+# Identidade de observabilidade do agent (ADR-005/ADR-006) — reutilizada por
+# observed_agent_turn/record_turn_outcome. Taskly tem um único assistente hoje,
+# então uma constante de módulo já cobre o caso; um segundo agent no futuro
+# declararia sua própria AgentIdentity e usaria os mesmos helpers.
+TASKLY_ASSISTANT = AgentIdentity(name="taskly-assistant", department="product")
+TEMPERATURE = 0.0
+MAX_TOKENS = 500
 
 ANTHROPIC_TOOLS: list[dict] = [
     {
@@ -129,18 +144,41 @@ class AssistantService:
         )
         self._model = settings.assistant_model
 
+    @observe(name="assistant_chat")
     async def chat(
         self, user_id: uuid.UUID, message: str, conversation_id: uuid.UUID | None
     ) -> dict:
         conversation = await self._resolve_conversation(user_id, conversation_id)
 
-        history = await self._conversations.list_messages(conversation.id)
-        messages: list[dict] = [
-            {"role": m.role, "content": m.content} for m in history
-        ]
-        messages.append({"role": "user", "content": message})
+        # user_id/session_id/tags propagam para todas as generations/tools desta
+        # trace (chamadas à Anthropic + tools) — ver ADR-005/ADR-006
+        with observed_agent_turn(
+            agent=TASKLY_ASSISTANT,
+            user_id=str(user_id),
+            session_id=str(conversation.id),
+        ):
+            history = await self._conversations.list_messages(conversation.id)
+            messages: list[dict] = [
+                {"role": m.role, "content": m.content} for m in history
+            ]
+            messages.append({"role": "user", "content": message})
 
-        reply, tool_calls = await self._run_tool_loop(messages, user_id)
+            reply, tool_calls, tools_used = await self._run_tool_loop(
+                messages, user_id
+            )
+
+        # Contrato de metadados de observabilidade por resposta — ADR-005/ADR-006
+        record_turn_outcome(
+            agent=TASKLY_ASSISTANT,
+            session_id=str(conversation.id),
+            user_id=str(user_id),
+            tools_used=tools_used,
+            model_parameters={
+                "model": self._model,
+                "temperature": TEMPERATURE,
+                "max_tokens": MAX_TOKENS,
+            },
+        )
 
         await self._conversations.add_message(conversation, "user", message)
         await self._conversations.add_message(conversation, "assistant", reply)
@@ -163,15 +201,16 @@ class AssistantService:
 
     async def _run_tool_loop(
         self, messages: list[dict], user_id: uuid.UUID
-    ) -> tuple[str, list[dict]]:
+    ) -> tuple[str, list[dict], list[dict]]:
         tool_calls: list[dict] = []
+        tools_used: list[dict] = []
         iterations = 0
 
         while True:
             response = await self._create_message(messages)
 
             if response.stop_reason != "tool_use":
-                return self._extract_text(response), tool_calls
+                return self._extract_text(response), tool_calls, tools_used
 
             iterations += 1
             if iterations > MAX_TOOL_ITERATIONS:
@@ -196,22 +235,31 @@ class AssistantService:
                     continue
                 tool_calls.append({"tool": block.name, "input": block.input})
                 result = await self._execute_tool(block.name, block.input, user_id)
+                is_error = isinstance(result, dict) and "error" in result
+                tools_used.append(
+                    {
+                        "name": block.name,
+                        "status": "error" if is_error else "success",
+                        "error": result.get("error") if is_error else None,
+                    }
+                )
                 tool_results.append(
                     {
                         "type": "tool_result",
                         "tool_use_id": block.id,
                         "content": json.dumps(result, ensure_ascii=False),
-                        "is_error": isinstance(result, dict) and "error" in result,
+                        "is_error": is_error,
                     }
                 )
             messages.append({"role": "user", "content": tool_results})
 
+    @observe(as_type="generation", name="anthropic_messages_create")
     async def _create_message(self, messages: list[dict]) -> anthropic.types.Message:
         try:
-            return await self._client.messages.create(
+            response = await self._client.messages.create(
                 model=self._model,
-                temperature=0.0,
-                max_tokens=500,
+                temperature=TEMPERATURE,
+                max_tokens=MAX_TOKENS,
                 system=SYSTEM_PROMPT,
                 tools=ANTHROPIC_TOOLS,
                 messages=messages,
@@ -219,7 +267,35 @@ class AssistantService:
         except anthropic.APIError as exc:
             raise AssistantError("Falha ao chamar a API da Anthropic") from exc
 
+        usage = getattr(response, "usage", None)
+        langfuse_client.update_current_generation(
+            model=self._model,
+            model_parameters={"temperature": TEMPERATURE, "max_tokens": MAX_TOKENS},
+            input=messages,
+            output=[self._content_block_to_dict(b) for b in response.content],
+            usage_details=(
+                {"input": usage.input_tokens, "output": usage.output_tokens}
+                if usage is not None
+                else None
+            ),
+        )
+        return response
+
+    @observe(as_type="tool", name="execute_tool")
     async def _execute_tool(
+        self, name: str, tool_input: dict, user_id: uuid.UUID
+    ) -> dict | list[dict]:
+        langfuse_client.update_current_span(name=name, input=tool_input)
+        result = await self._execute_tool_impl(name, tool_input, user_id)
+        is_error = isinstance(result, dict) and "error" in result
+        langfuse_client.update_current_span(
+            output=result,
+            level="ERROR" if is_error else None,
+            status_message=result.get("error") if is_error else None,
+        )
+        return result
+
+    async def _execute_tool_impl(
         self, name: str, tool_input: dict, user_id: uuid.UUID
     ) -> dict | list[dict]:
         if name == "list_projects":

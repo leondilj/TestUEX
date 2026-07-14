@@ -14,8 +14,18 @@ services:
       # — vazio só desabilita o endpoint de chat, resto do app sobe normal.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       ASSISTANT_MODEL: ${ASSISTANT_MODEL:-claude-haiku-4-5-20251001}
+      # Observabilidade do assistente (ADR-005) — Langfuse self-host, subido à parte
+      # via `docker-compose.langfuse.yml`. Chaves vazias desabilitam o tracing
+      # (client em modo no-op), igual ao padrão do ANTHROPIC_API_KEY acima.
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      LANGFUSE_HOST: ${LANGFUSE_HOST:-http://host.docker.internal:3001}
     volumes:
       - uploads_data:/app/uploads
+    # host.docker.internal só resolve nativamente no Docker Desktop (Windows/Mac);
+    # `host-gateway` torna a mesma URL válida também em Docker Engine no Linux
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy
