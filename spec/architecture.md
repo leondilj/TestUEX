@@ -26,7 +26,7 @@ graph TD
     Repos -- "grava/lê arquivo" --> Uploads
 ```
 
-**Assistente (extensão, além do escopo mínimo)** — roda **dentro do mesmo processo/contexto da API**, não é um servidor separado. Histórico persistido em Postgres (`ADR-003`), loop de tool use limitado a 5 iterações:
+**Assistente (extensão, além do escopo mínimo)** — roda **dentro do mesmo processo/contexto da API**, não é um servidor separado. Histórico persistido em Postgres (`ADR-003`), loop de tool use limitado a 5 iterações. Toda a interação é instrumentada com Langfuse self-host local (`ADR-005`/`ADR-006`) — cada chamada ao modelo e cada tool vira um span na mesma trace, com o contrato de metadados descrito em `Observabilidade` abaixo:
 
 ```mermaid
 sequenceDiagram
@@ -36,18 +36,23 @@ sequenceDiagram
     participant DB as Postgres (assistant_conversations / assistant_messages)
     participant T as tools (services existentes)
     participant C as Anthropic Claude API
+    participant LF as Langfuse (self-host, Docker separado)
 
     W->>AR: POST /assistant/chat (cookie httpOnly, autenticado)
     AR->>AS: mensagem + conversation_id
     AS->>DB: carrega histórico (cria conversa se conversation_id nulo)
+    AS->>LF: observed_agent_turn — propaga user_id/session_id/tags para a trace
     AS->>C: system prompt (spec/prompts.md) + histórico + tools (spec/tools.md)
     loop até 5 iterações (ADR-003)
         C-->>AS: pede tool_call?
         AS->>T: executa tool → chama service (project_service/task_service), escopado ao usuário
         T-->>AS: resultado real
+        AS->>LF: span "execute_tool" (name, input, output, status)
         AS->>C: resultado da tool
+        AS->>LF: generation "anthropic_messages_create" (model, tokens, input/output)
     end
     C-->>AS: resposta final em texto
+    AS->>LF: record_turn_outcome — metadata do contrato (tools_used, error_level, model_parameters)
     AS->>DB: persiste mensagem do usuário + resposta final
     AS-->>AR: reply + tool_calls (transparência)
     AR-->>W: resposta exibida ao usuário
@@ -62,6 +67,8 @@ sequenceDiagram
 | PostgreSQL | Armazena usuários, projetos, tarefas, anexos (metadados). |
 | Volume `uploads/` | Armazena os arquivos de anexo/foto em disco (dev); ponto de troca futuro para storage de objeto (S3-compatible). |
 | `assistant` (extensão, dentro de `api`) | Endpoint de chat (`/assistant/chat`) que usa Claude (tool use) para interpretar linguagem natural e acionar `list_projects`, `list_tasks`, `create_task`, `update_task_status` — sempre escopado ao usuário autenticado da requisição, sem usuário fixo/token separado. Ver `spec/tools.md`, `spec/prompts.md` e `ADR-003`. |
+| `app/observability.py` (extensão, dentro de `api`) | Cliente Langfuse singleton do processo + contrato reutilizável de metadados (`AgentIdentity`, `observed_agent_turn`, `record_turn_outcome`) usado pelo `assistant_service`. Sem `LANGFUSE_PUBLIC_KEY`/`SECRET_KEY` configuradas, o cliente opera em modo no-op — o assistente funciona normalmente, só não envia dados. Ver `ADR-005`/`ADR-006`. |
+| Langfuse (self-host, Docker separado) | Stack de observabilidade/tracing do assistente (`docker-compose.langfuse.yml`, fora do compose principal) — web + worker + Postgres + ClickHouse + Redis + MinIO próprios, isolados do stack do Taskly. Ver `ADR-005`. |
 
 ## Data Flow
 
@@ -70,7 +77,29 @@ sequenceDiagram
 3. CRUD de projetos e tarefas segue `router → service → repository → PostgreSQL`, sempre escopado ao `user_id` do usuário autenticado (nunca um usuário acessa dado de outro).
 4. Upload de anexo: `web` envia `multipart/form-data` → API grava o arquivo em `uploads/{task_id}/{filename}` e persiste metadados (nome, tipo, tamanho, path) vinculados à `Task`.
 5. `web` alterna lista/kanban localmente (estado de UI) a partir dos mesmos dados retornados por `GET /projects/{id}/tasks` — não há endpoint separado por modo de visualização. Mudança de status no kanban é feita por um controle explícito no card (dropdown/botão), chamando `PATCH /tasks/{id}` — sem drag-and-drop, sem campo de posição (ver `ADR-004`).
-6. **Assistente (extensão):** usuário abre a tela "Assistente" em `web` e envia uma mensagem → `POST /api/v1/assistant/chat` (mesmo cookie/autenticação de sempre). O `assistant_service` carrega o histórico da conversa (`assistant_conversations`/`assistant_messages`, criando a conversa se `conversation_id` vier nulo), monta o system prompt (`spec/prompts.md`) + histórico + as 4 tools (`spec/tools.md`) e chama a API da Anthropic. Se o modelo pedir uma tool, o `assistant_service` executa a função Python correspondente — que chama o `service` já existente (`project_service`/`task_service`), escopado ao `user_id` da requisição, exatamente como um router REST faria — devolve o resultado ao modelo, e repete (até 5 iterações, ver `ADR-003`) até haver uma resposta final em texto. A mensagem do usuário e a resposta final são persistidas em `assistant_messages` antes de responder.
+6. **Assistente (extensão):** usuário abre a tela "Assistente" em `web` e envia uma mensagem → `POST /api/v1/assistant/chat` (mesmo cookie/autenticação de sempre). O `assistant_service` carrega o histórico da conversa (`assistant_conversations`/`assistant_messages`, criando a conversa se `conversation_id` vier nulo), monta o system prompt (`spec/prompts.md`) + histórico + as 4 tools (`spec/tools.md`) e chama a API da Anthropic. Se o modelo pedir uma tool, o `assistant_service` executa a função Python correspondente — que chama o `service` já existente (`project_service`/`task_service`), escopado ao `user_id` da requisição, exatamente como um router REST faria — devolve o resultado ao modelo, e repete (até 5 iterações, ver `ADR-003`) até haver uma resposta final em texto. A mensagem do usuário e a resposta final são persistidas em `assistant_messages` antes de responder. Toda a interação é observada via Langfuse (ver `Observabilidade` abaixo) — isso não bloqueia nem altera a resposta ao usuário; com o cliente em modo no-op (sem chaves configuradas), o fluxo é idêntico.
+
+## Observabilidade
+
+Extensão sobre o assistente (`ADR-005`/`ADR-006`), sem impacto no escopo mínimo do case: cada resposta gerada pelo `assistant_service` é rastreada como uma trace no Langfuse, rodando **self-host local** em um Docker Compose separado (`docker-compose.langfuse.yml`), isolado do stack principal do Taskly.
+
+- **Cliente**: `app/observability.py` instancia um `Langfuse` singleton no import do módulo (mesmo padrão do engine SQLAlchemy em `app/database.py`), configurado via `Settings` (`langfuse_public_key`/`secret_key`/`host`). Chave pública vazia (default) deixa o cliente em modo no-op — nenhuma chamada sai do processo.
+- **Instrumentação**: `@observe()` da SDK do Langfuse decora `AssistantService.chat` (trace raiz), `_create_message` (generation, com model/tokens/parâmetros) e `_execute_tool` (span de tool, com input/output/status). `observed_agent_turn` propaga `user_id`/`session_id`/`tags` para toda a árvore de spans de uma interação.
+- **Contrato de metadados por resposta** (`ADR-006`) — anexado ao span raiz via `record_turn_outcome`, depois que o loop de tool use termina:
+
+  | Campo | Origem |
+  |---|---|
+  | `session_id` / `user_id` | `conversation.id` / usuário autenticado da requisição |
+  | `agent_name` / `department` | `AgentIdentity` fixa (`TASKLY_ASSISTANT`, `name="taskly-assistant"`, `department="product"`) — Taskly tem um único assistente, sem estrutura multi-agente |
+  | `tools_used` | Lista `{name, status, error}` acumulada no loop de tool use (`_run_tool_loop`), paralela ao `tool_calls` já devolvido na resposta HTTP |
+  | `tags` | `[agent_name, department, app_environment]` — filtragem cruzada no Langfuse |
+  | `error_level` | `"ERROR"` se qualquer tool da resposta falhou (`status == "error"`), senão `None` |
+  | `model_parameters` | `model`, `temperature` (`0.0`), `max_tokens` (`500`) |
+  | `escalation_flag` | Sempre `False` — Taskly não tem fluxo de revisão humana; existe no contrato para reuso futuro |
+
+- **Reuso**: `AgentIdentity`/`observed_agent_turn`/`record_turn_outcome` são agent-agnósticos por design — um segundo agent (se surgir) declara sua própria `AgentIdentity` e reaproveita os mesmos helpers, sem duplicar a lógica de tags/error_level/metadata e sem exigir um registro dinâmico de agents (rejeitado por especulativo, ver `ADR-006`).
+- **Infra**: `docker-compose.langfuse.yml` sobe `langfuse-web` (porta `3001`, evita conflito com o Next.js em `3000`), `langfuse-worker`, Postgres próprio (porta `5433`, evita conflito com o Postgres do Taskly), ClickHouse, Redis e MinIO — todos isolados do stack do Taskly, subidos com `--env-file .env.langfuse` separado. O Redis aqui é infraestrutura interna do Langfuse, não do Taskly (que continua sem Redis próprio, decisão registrada no README/CLAUDE.md). Comunicação `api` → Langfuse via `host.docker.internal` (dois projetos Compose distintos).
+- **Opcional por padrão**: sem `LANGFUSE_PUBLIC_KEY`/`SECRET_KEY` no `.env`, o assistente funciona normalmente e nenhum dado é enviado — ver `.env.example`.
 
 ## Technology Decisions
 
@@ -93,6 +122,8 @@ sequenceDiagram
 | Anti-alucinação do assistente | System prompt restritivo + tools como única fonte de dados (`spec/prompts.md`) | O modelo nunca deve responder sobre tarefas/projetos sem antes chamar uma tool — ver regras detalhadas em `spec/prompts.md`. |
 | Histórico de conversa do assistente | Persistido em Postgres (`assistant_conversations` + `assistant_messages`), não em memória do processo | Ver `ADR-003` (nota de complemento). Memória de processo não sobrevive a restart nem garante consistência entre múltiplos workers. |
 | Limite de iterações do loop de tool use | Máx. 5 tool calls por mensagem no `assistant_service` | Ver `ADR-003` (nota de complemento). Proteção barata contra loop/custo descontrolado de chamadas à API da Anthropic. |
+| Observabilidade do assistente | Langfuse self-host local (Docker Compose separado) | Diferencial de auditoria/debug sobre o tool-use loop, sem depender de um SaaS externo; opcional (modo no-op sem chaves configuradas). Ver `ADR-005`. |
+| Contrato de metadados de observabilidade | Helpers reutilizáveis em `app/observability.py` (`AgentIdentity`, `observed_agent_turn`, `record_turn_outcome`) | Agent-agnóstico por design, sem construir um registro dinâmico de agents que o Taskly não precisa hoje. Ver `ADR-006`. |
 
 ## Project Structure
 
@@ -117,6 +148,7 @@ TestUEX/
 │   │   │   ├── task_service.py
 │   │   │   ├── attachment_service.py
 │   │   │   └── assistant_service.py          # orquestra Claude + tools + histórico
+│   │   ├── observability.py                  # cliente Langfuse + AgentIdentity/observed_agent_turn/record_turn_outcome (ADR-005/ADR-006)
 │   │   ├── assistant/                        # extensão — isolada do core do produto
 │   │   │   ├── system_prompt.py              # espelha spec/prompts.md
 │   │   │   └── tools/
@@ -182,6 +214,7 @@ TestUEX/
 │   ├── Dockerfile
 │   └── package.json
 ├── docker-compose.yml            # api + postgres (web roda via `npm run dev` em dev)
+├── docker-compose.langfuse.yml   # Langfuse self-host (extensão, opcional) — projeto Compose separado, ver ADR-005
 ├── .github/workflows/ci.yml      # lint + pytest + build de api e web
 └── README.md
 ```
@@ -195,6 +228,7 @@ TestUEX/
 - **Migrations**: toda alteração de schema passa por uma revision do Alembic — nunca alterar tabela manualmente no banco de dev.
 - **Testes**: cada endpoint tem ao menos um teste de caminho feliz e um de erro (401/404/400) relevante; testes rodam contra um Postgres real (via docker-compose no CI), não SQLite, para refletir comportamento real de `text[]` e constraints.
 - **Registro de prompts de IA**: toda vez que um trecho relevante de código for gerado com assistência de IA, registrar o prompt em `spec/prompts.md` (ver seção dedicada) — não deixar para reconstituir no fim.
+- **Observabilidade do assistente**: toda tool nova ou chamada ao modelo em `assistant_service.py` deve passar pelos helpers de `app/observability.py` (`observed_agent_turn`/`record_turn_outcome`), nunca montar o payload de metadata inline — mantém o contrato de campos (`ADR-006`) consistente e reutilizável por um eventual segundo agent.
 
 ## Risks
 
